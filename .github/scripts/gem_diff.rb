@@ -137,6 +137,14 @@ markdown = +"## Dependency change summary\n\n"
 markdown << "Base branch: `#{BASE_REF}`\n\n"
 markdown << "This PR updates the resolved gem set based on changes in `Gemfile` / `Gemfile.lock` (and related gemspec changes, if any).\n\n"
 
+auto_fix_summary = ENV["AUTO_FIX_SUMMARY"].to_s.strip
+unless auto_fix_summary.empty?
+  markdown << "## Auto-fix changes\n\n"
+  markdown << auto_fix_summary
+  markdown << "\n" unless auto_fix_summary.end_with?("\n")
+  markdown << "\n"
+end
+
 [["Direct dependencies (from Gemfile)", direct],
  ["Transitive / stdlib gems (from Gemfile.lock only)", transitive]].each do |title, list|
   next if list.empty?
