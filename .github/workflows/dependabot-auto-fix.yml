@@ -1,4 +1,4 @@
-name: Auto-fix Dependabot Gem Failures
+name: Dependabot Auto-Fix
 
 on:
   pull_request:
@@ -8,8 +8,12 @@ on:
     types: [opened, reopened, synchronize]
 
 jobs:
-  auto-fix-gems:
+  auto-fix-dependabot:
+    if: ${{ github.actor == 'dependabot[bot]' }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -23,7 +27,7 @@ jobs:
           bundler-cache: true
 
       # ============================================
-      # STAGE 1: Generate gem change summary
+      # Generate gem change summary
       # ============================================
       - name: Generate gem change summary
         id: gem_summary
@@ -33,349 +37,312 @@ jobs:
             echo "GEM_SUMMARY<<EOF" >> $GITHUB_ENV
             cat gem_summary.txt >> $GITHUB_ENV
             echo "EOF" >> $GITHUB_ENV
-          else
-            echo "⚠️  gem_diff.rb not found, skipping summary"
           fi
 
       # ============================================
-      # STAGE 2: Initial test run
+      # Initial test run
       # ============================================
-      - name: Run tests (initial)
+      - name: Run initial tests
         id: initial_tests
         continue-on-error: true
         run: |
-          bundle exec rspec --format progress --format RspecJunitFormatter --out rspec.xml 2>&1 | tee test_output.txt
-          echo "TEST_COUNT=$(grep -c 'passed\|failed' test_output.txt || echo '0')" >> $GITHUB_ENV
+          bin/rails test:prepare 2>&1 | tee test_output.txt
+          bin/rails test 2>&1 | tee -a test_output.txt
+          echo "test_exit_code=$?" >> $GITHUB_OUTPUT
 
       # ============================================
-      # STAGE 3-6: Looping fix attempts (max 3 iterations)
+      # Auto-fix loop - Iteration 1
       # ============================================
-      - name: Attempt fix iteration 1
-        if: steps.initial_tests.outcome == 'failure'
-        id: fix_attempt_1
+      - name: Auto-fix iteration 1
+        if: steps.initial_tests.outputs.test_exit_code != '0'
+        id: fix_iteration_1
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ITERATION: 1
         run: |
-          echo "🔄 Iteration 1: Getting Copilot fix suggestions..."
+          echo "🔄 Iteration 1: Analyzing failures and generating fixes..."
           
-          FAILURES=$(cat test_output.txt | head -200)
-          GEM_CHANGES=$(git diff origin/main Gemfile.lock | head -150)
+          TEST_FAILURES=$(cat test_output.txt 2>/dev/null | tail -300)
+          GEM_CHANGES=$(git diff origin/main Gemfile.lock 2>/dev/null | head -200)
+          GEMFILE=$(cat Gemfile)
           
           PROMPT=$(cat <<'PROMPT_END'
-          You are a Ruby on Rails expert. A Dependabot gem upgrade broke the application.
+          You are an expert Ruby on Rails DevOps engineer. A Dependabot gem upgrade caused CI test failures.
           
-          **Gem Changes:**
+          **Gem changes:**
           PROMPT_END
           echo "$GEM_CHANGES"
           cat <<'PROMPT_END'
           
-          **Test Failures:**
+          **Test failures:**
           PROMPT_END
-          echo "$FAILURES"
+          echo "$TEST_FAILURES"
           cat <<'PROMPT_END'
           
           **Your task:**
-          1. Identify which files need fixes based on the gem changes and test failures
-          2. Provide ONLY code fixes for app/, config/, db/ directories
-          3. Format fixes exactly as:
+          Analyze the failures and provide fixes for ANY files needed (app/, config/, lib/, Gemfile, .github/workflows/, etc).
+          Format EXACTLY as:
           
-          FILE: path/to/file.rb
-          ```ruby
-          fixed code here
+          FIX_FILE: path/to/file.ext
+          ```language
+          complete file content (not partial)
           ```
           
-          4. Add brief comments explaining the version-specific change
-          5. DO NOT modify Gemfile, Gemfile.lock, or spec files
-          6. Return ONLY the code fixes, no explanations
+          FIX_FILE: another/file.ext
+          ```language
+          complete file content
+          ```
+          
+          COMMIT_MESSAGE: Brief description
+          
+          Provide ALL fixes in one response.
           PROMPT_END
           )
           
-          gh models run claude-3-5-sonnet-20241022 --input "$PROMPT" > copilot_fixes_1.txt 2>&1
-          cat copilot_fixes_1.txt
+          gh models run claude-3-5-sonnet-20241022 --input "$PROMPT" > fixes_iteration_1.txt 2>&1 || echo "Failed to get AI suggestions"
+          
+          cat fixes_iteration_1.txt
+          echo "fixes_generated=true" >> $GITHUB_OUTPUT
 
       - name: Apply fixes iteration 1
-        if: steps.initial_tests.outcome == 'failure' && steps.fix_attempt_1.outcome == 'success'
+        if: steps.fix_iteration_1.outputs.fixes_generated == 'true'
         id: apply_fixes_1
         run: |
-          echo "📝 Applying Copilot fixes (iteration 1)..."
+          python3 << 'PYTHON_END'
+          import re
+          import os
           
-          ruby << 'EOF'
-          require 'pathname'
+          try:
+              with open('fixes_iteration_1.txt', 'r') as f:
+                  content = f.read()
+          except:
+              exit(0)
           
-          fixes_file = 'copilot_fixes_1.txt'
-          return unless File.exist?(fixes_file)
+          # Parse FIX_FILE blocks
+          pattern = r'FIX_FILE:\s*(.+?)\n```(\w+)\n(.*?)```'
+          matches = re.findall(pattern, content, re.DOTALL)
           
-          fixes_text = File.read(fixes_file)
-          fix_count = 0
+          for filepath, lang, file_content in matches:
+              filepath = filepath.strip()
+              file_content = file_content.rstrip()
+              
+              # Create directories if needed
+              os.makedirs(os.path.dirname(filepath) or '.', exist_ok=True)
+              
+              with open(filepath, 'w') as f:
+                  f.write(file_content)
+              print(f"✅ {filepath}")
           
-          # Parse FILE: and code blocks
-          fixes_text.scan(/FILE:\s*(.+?)\s+```ruby\s*(.+?)\s*```/m) do |file, code|
-            file = file.strip
-            code = code.strip
-            
-            # Safety checks
-            if file.include?('Gemfile') || file.include?('spec') || file.include?('test')
-              puts "⏭️  Skipping protected file: #{file}"
-              next
-            end
-            
-            unless File.exist?(file)
-              puts "⚠️  File not found: #{file}, creating it"
-            end
-            
-            # Write the fix
-            File.write(file, code)
-            puts "✅ Fixed: #{file}"
-            fix_count += 1
-          end
+          if not matches:
+              print("No fixes found")
           
-          puts "📊 Applied #{fix_count} fixes"
-          EOF
+          PYTHON_END
+          
+          if git status --porcelain | grep -q .; then
+            echo "fixes_applied=true" >> $GITHUB_OUTPUT
+          else
+            echo "fixes_applied=false" >> $GITHUB_OUTPUT
+          fi
 
-      - name: Re-run tests iteration 1
-        if: steps.initial_tests.outcome == 'failure'
-        id: retest_1
+      - name: Commit and push iteration 1
+        if: steps.apply_fixes_1.outputs.fixes_applied == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          COMMIT_MSG=$(grep "COMMIT_MESSAGE:" fixes_iteration_1.txt 2>/dev/null | head -1 | sed 's/COMMIT_MESSAGE: //' || echo "fix: auto-fix iteration 1")
+          
+          git add -A
+          git commit -m "$COMMIT_MSG"
+          git push origin HEAD
+
+      - name: Test after iteration 1
+        if: steps.apply_fixes_1.outputs.fixes_applied == 'true'
+        id: test_after_fix_1
         continue-on-error: true
         run: |
-          echo "🧪 Re-running tests after fixes (iteration 1)..."
-          bundle exec rspec --format progress 2>&1 | tee test_output_1.txt
+          bin/rails test:prepare 2>&1 | tee test_output_1.txt
+          bin/rails test 2>&1 | tee -a test_output_1.txt
+          echo "test_exit_code=$?" >> $GITHUB_OUTPUT
 
       # ============================================
-      # ITERATION 2 (if still failing)
+      # Auto-fix loop - Iteration 2
       # ============================================
-      - name: Attempt fix iteration 2
-        if: steps.retest_1.outcome == 'failure'
-        id: fix_attempt_2
+      - name: Auto-fix iteration 2
+        if: steps.test_after_fix_1.outputs.test_exit_code != '0'
+        id: fix_iteration_2
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "🔄 Iteration 2: Getting refined Copilot fixes..."
+          echo "🔄 Iteration 2: Analyzing remaining failures..."
           
-          FAILURES=$(cat test_output_1.txt | head -200)
-          PREVIOUS_FIX=$(cat copilot_fixes_1.txt | head -100)
+          TEST_FAILURES=$(cat test_output_1.txt 2>/dev/null | tail -300)
           
           PROMPT=$(cat <<'PROMPT_END'
-          The previous fix attempt didn't fully resolve the test failures.
-          
-          **Previous fix applied:**
-          PROMPT_END
-          echo "$PREVIOUS_FIX"
-          cat <<'PROMPT_END'
+          Fixes were applied in iteration 1, but tests still fail. Provide additional fixes.
           
           **Remaining failures:**
           PROMPT_END
-          echo "$FAILURES"
+          echo "$TEST_FAILURES"
           cat <<'PROMPT_END'
           
-          Provide more refined fixes with better understanding of the gem version changes.
-          Format as before: FILE: path CODE: ```ruby ... ```
+          Format as before:
+          FIX_FILE: path/to/file.ext
+          ```language
+          content
+          ```
+          
+          COMMIT_MESSAGE: Description
           PROMPT_END
           )
           
-          gh models run claude-3-5-sonnet-20241022 --input "$PROMPT" > copilot_fixes_2.txt 2>&1
-          cat copilot_fixes_2.txt
+          gh models run claude-3-5-sonnet-20241022 --input "$PROMPT" > fixes_iteration_2.txt 2>&1 || echo "Failed"
+          cat fixes_iteration_2.txt
+          echo "fixes_generated=true" >> $GITHUB_OUTPUT
 
       - name: Apply fixes iteration 2
-        if: steps.retest_1.outcome == 'failure' && steps.fix_attempt_2.outcome == 'success'
-        id: apply_fixes_2
+        if: steps.fix_iteration_2.outputs.fixes_generated == 'true'
         run: |
-          echo "📝 Applying Copilot fixes (iteration 2)..."
+          python3 << 'PYTHON_END'
+          import re
+          import os
           
-          ruby << 'EOF'
-          require 'pathname'
+          try:
+              with open('fixes_iteration_2.txt', 'r') as f:
+                  content = f.read()
+          except:
+              exit(0)
           
-          fixes_file = 'copilot_fixes_2.txt'
-          return unless File.exist?(fixes_file)
+          pattern = r'FIX_FILE:\s*(.+?)\n```(\w+)\n(.*?)```'
+          matches = re.findall(pattern, content, re.DOTALL)
           
-          fixes_text = File.read(fixes_file)
-          fix_count = 0
+          for filepath, lang, file_content in matches:
+              filepath = filepath.strip()
+              file_content = file_content.rstrip()
+              os.makedirs(os.path.dirname(filepath) or '.', exist_ok=True)
+              with open(filepath, 'w') as f:
+                  f.write(file_content)
+              print(f"✅ {filepath}")
           
-          fixes_text.scan(/FILE:\s*(.+?)\s+```ruby\s*(.+?)\s*```/m) do |file, code|
-            file = file.strip
-            code = code.strip
-            
-            if file.include?('Gemfile') || file.include?('spec') || file.include?('test')
-              puts "⏭️  Skipping: #{file}"
-              next
-            end
-            
-            File.write(file, code)
-            puts "✅ Fixed: #{file}"
-            fix_count += 1
-          end
+          PYTHON_END
           
-          puts "📊 Applied #{fix_count} fixes"
-          EOF
+          if git status --porcelain | grep -q .; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            COMMIT_MSG=$(grep "COMMIT_MESSAGE:" fixes_iteration_2.txt 2>/dev/null | head -1 | sed 's/COMMIT_MESSAGE: //' || echo "fix: iteration 2")
+            git add -A
+            git commit -m "$COMMIT_MSG"
+            git push origin HEAD
+          fi
 
-      - name: Re-run tests iteration 2
-        if: steps.retest_1.outcome == 'failure'
-        id: retest_2
+      - name: Test after iteration 2
+        if: steps.fix_iteration_2.outputs.fixes_generated == 'true'
+        id: test_after_fix_2
         continue-on-error: true
         run: |
-          echo "🧪 Re-running tests after fixes (iteration 2)..."
-          bundle exec rspec --format progress 2>&1 | tee test_output_2.txt
+          bin/rails test:prepare 2>&1 | tee test_output_2.txt
+          bin/rails test 2>&1 | tee -a test_output_2.txt
+          echo "test_exit_code=$?" >> $GITHUB_OUTPUT
 
       # ============================================
-      # ITERATION 3 (final attempt)
+      # Auto-fix loop - Iteration 3 (Final)
       # ============================================
-      - name: Attempt fix iteration 3
-        if: steps.retest_2.outcome == 'failure'
-        id: fix_attempt_3
+      - name: Auto-fix iteration 3 (final)
+        if: steps.test_after_fix_2.outputs.test_exit_code != '0'
+        id: fix_iteration_3
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "🔄 Iteration 3 (final): Getting comprehensive Copilot fixes..."
+          echo "🔄 Iteration 3: Final fix attempt..."
           
-          FAILURES=$(cat test_output_2.txt | head -250)
+          TEST_FAILURES=$(cat test_output_2.txt 2>/dev/null | tail -300)
           
           PROMPT=$(cat <<'PROMPT_END'
-          This is the final attempt. The tests are still failing after 2 previous fix iterations.
+          Final attempt after 2 iterations. Provide all necessary fixes to make tests pass.
           
-          **Current failures:**
+          **Failures:**
           PROMPT_END
-          echo "$FAILURES"
+          echo "$TEST_FAILURES"
           cat <<'PROMPT_END'
           
-          Review ALL test failures and provide comprehensive fixes that address the root cause.
-          Check for:
-          - API changes in upgraded gems
-          - Configuration changes needed
-          - Callback/hook changes
-          - Method signature changes
+          Format:
+          FIX_FILE: path/to/file.ext
+          ```language
+          content
+          ```
           
-          Format: FILE: path CODE: ```ruby ... ```
+          COMMIT_MESSAGE: Description
           PROMPT_END
           )
           
-          gh models run claude-3-5-sonnet-20241022 --input "$PROMPT" > copilot_fixes_3.txt 2>&1
-          cat copilot_fixes_3.txt
+          gh models run claude-3-5-sonnet-20241022 --input "$PROMPT" > fixes_iteration_3.txt 2>&1 || echo "Failed"
+          cat fixes_iteration_3.txt
+          echo "fixes_generated=true" >> $GITHUB_OUTPUT
 
       - name: Apply fixes iteration 3
-        if: steps.retest_2.outcome == 'failure' && steps.fix_attempt_3.outcome == 'success'
-        id: apply_fixes_3
+        if: steps.fix_iteration_3.outputs.fixes_generated == 'true'
         run: |
-          echo "📝 Applying Copilot fixes (iteration 3 - final)..."
+          python3 << 'PYTHON_END'
+          import re
+          import os
           
-          ruby << 'EOF'
-          require 'pathname'
+          try:
+              with open('fixes_iteration_3.txt', 'r') as f:
+                  content = f.read()
+          except:
+              exit(0)
           
-          fixes_file = 'copilot_fixes_3.txt'
-          return unless File.exist?(fixes_file)
+          pattern = r'FIX_FILE:\s*(.+?)\n```(\w+)\n(.*?)```'
+          matches = re.findall(pattern, content, re.DOTALL)
           
-          fixes_text = File.read(fixes_file)
-          fix_count = 0
+          for filepath, lang, file_content in matches:
+              filepath = filepath.strip()
+              file_content = file_content.rstrip()
+              os.makedirs(os.path.dirname(filepath) or '.', exist_ok=True)
+              with open(filepath, 'w') as f:
+                  f.write(file_content)
+              print(f"✅ {filepath}")
           
-          fixes_text.scan(/FILE:\s*(.+?)\s+```ruby\s*(.+?)\s*```/m) do |file, code|
-            file = file.strip
-            code = code.strip
-            
-            if file.include?('Gemfile') || file.include?('spec') || file.include?('test')
-              puts "⏭️  Skipping: #{file}"
-              next
-            end
-            
-            File.write(file, code)
-            puts "✅ Fixed: #{file}"
-            fix_count += 1
-          end
+          PYTHON_END
           
-          puts "📊 Applied #{fix_count} fixes"
-          EOF
+          if git status --porcelain | grep -q .; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            COMMIT_MSG=$(grep "COMMIT_MESSAGE:" fixes_iteration_3.txt 2>/dev/null | head -1 | sed 's/COMMIT_MESSAGE: //' || echo "fix: iteration 3 final")
+            git add -A
+            git commit -m "$COMMIT_MSG"
+            git push origin HEAD
+          fi
 
-      - name: Final test run
-        if: steps.retest_2.outcome == 'failure'
-        id: final_tests
+      - name: Final test
+        if: steps.fix_iteration_3.outputs.fixes_generated == 'true'
+        id: final_test
         continue-on-error: true
         run: |
-          echo "🧪 Final test run (after iteration 3)..."
-          bundle exec rspec --format progress 2>&1 | tee test_output_final.txt
+          bin/rails test:prepare 2>&1 | tee final_test_output.txt
+          bin/rails test 2>&1 | tee -a final_test_output.txt
+          echo "test_exit_code=$?" >> $GITHUB_OUTPUT
 
       # ============================================
-      # STAGE 6: Commit and push all fixes
+      # Summary
       # ============================================
-      - name: Commit and push all fixes
-        if: steps.initial_tests.outcome == 'failure'
-        run: |
-          git config user.email "github-actions[bot]@github.com"
-          git config user.name "github-actions[bot]"
-          
-          git add -A
-          
-          COMMIT_MESSAGE=$(cat <<'MSG'
-          fix: Update code for gem upgrade compatibility
-          
-          Applied Copilot-generated fixes for Dependabot gem upgrades:
-          - Iteration 1: Initial compatibility fixes
-          MSG
-          )
-          
-          if [ -f copilot_fixes_2.txt ] && grep -q "FILE:" copilot_fixes_2.txt; then
-            COMMIT_MESSAGE="${COMMIT_MESSAGE}
-          - Iteration 2: Refined fixes"
-          fi
-          
-          if [ -f copilot_fixes_3.txt ] && grep -q "FILE:" copilot_fixes_3.txt; then
-            COMMIT_MESSAGE="${COMMIT_MESSAGE}
-          - Iteration 3: Comprehensive fixes"
-          fi
-          
-          COMMIT_MESSAGE="${COMMIT_MESSAGE}
-          
-          See .github/scripts/gem_diff.rb output for detailed gem changes.
-          This was automatically generated by Copilot via GitHub Models API."
-          
-          git commit -m "$COMMIT_MESSAGE" || echo "❌ No changes to commit"
-          git push origin HEAD:${{ github.head_ref }} || echo "Failed to push"
-
-      # ============================================
-      # STAGE 7: Summary
-      # ============================================
-      - name: Test result summary
+      - name: Summary
         if: always()
         run: |
-          echo "## 📊 Dependabot Gem Upgrade - Auto-Fix Summary" >> $GITHUB_STEP_SUMMARY
+          echo "## 🤖 Dependabot Auto-Fix Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Initial Test Status" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ steps.initial_tests.outcome }}" == "success" ]; then
-            echo "✅ **Tests PASSED on first run - No fixes needed**" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ steps.initial_tests.outputs.test_exit_code }}" == "0" ]; then
+            echo "✅ Tests passed on first run - no fixes needed" >> $GITHUB_STEP_SUMMARY
           else
-            echo "❌ **Tests FAILED - Copilot fixes applied**" >> $GITHUB_STEP_SUMMARY
+            echo "⚠️ Tests failed - applying fixes..." >> $GITHUB_STEP_SUMMARY
+            
+            if [ "${{ steps.test_after_fix_1.outputs.test_exit_code }}" == "0" ]; then
+              echo "✅ Tests passed after iteration 1" >> $GITHUB_STEP_SUMMARY
+            elif [ "${{ steps.test_after_fix_2.outputs.test_exit_code }}" == "0" ]; then
+              echo "✅ Tests passed after iteration 2" >> $GITHUB_STEP_SUMMARY
+            elif [ "${{ steps.final_test.outputs.test_exit_code }}" == "0" ]; then
+              echo "✅ Tests passed after iteration 3" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "❌ Tests still failing after 3 iterations - manual review required" >> $GITHUB_STEP_SUMMARY
+            fi
           fi
-          echo "" >> $GITHUB_STEP_SUMMARY
-          
-          if [ -f copilot_fixes_1.txt ]; then
-            echo "### Iteration 1 Fixes" >> $GITHUB_STEP_SUMMARY
-            grep "^FILE:" copilot_fixes_1.txt | sed 's/FILE: /- /' >> $GITHUB_STEP_SUMMARY || echo "No fixes" >> $GITHUB_STEP_SUMMARY
-          fi
-          
-          if [ "${{ steps.retest_1.outcome }}" == "success" ]; then
-            echo "✅ **Tests PASSED after iteration 1**" >> $GITHUB_STEP_SUMMARY
-          elif [ "${{ steps.retest_1.outcome }}" == "failure" ] && [ -n "${{ steps.fix_attempt_2.outcome }}" ]; then
-            echo "### Iteration 2 Fixes" >> $GITHUB_STEP_SUMMARY
-            grep "^FILE:" copilot_fixes_2.txt | sed 's/FILE: /- /' >> $GITHUB_STEP_SUMMARY || echo "No fixes" >> $GITHUB_STEP_SUMMARY
-          fi
-          
-          if [ "${{ steps.retest_2.outcome }}" == "success" ]; then
-            echo "✅ **Tests PASSED after iteration 2**" >> $GITHUB_STEP_SUMMARY
-          elif [ "${{ steps.retest_2.outcome }}" == "failure" ] && [ -n "${{ steps.fix_attempt_3.outcome }}" ]; then
-            echo "### Iteration 3 Fixes (Final)" >> $GITHUB_STEP_SUMMARY
-            grep "^FILE:" copilot_fixes_3.txt | sed 's/FILE: /- /' >> $GITHUB_STEP_SUMMARY || echo "No fixes" >> $GITHUB_STEP_SUMMARY
-          fi
-          
-          if [ "${{ steps.final_tests.outcome }}" == "success" ]; then
-            echo "✅ **Tests PASSED after final iteration**" >> $GITHUB_STEP_SUMMARY
-          elif [ "${{ steps.final_tests.outcome }}" == "failure" ]; then
-            echo "⚠️  **Tests still failing after all iterations**" >> $GITHUB_STEP_SUMMARY
-            echo "Manual review recommended." >> $GITHUB_STEP_SUMMARY
-          fi
-          
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Gem Changes Summary" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          head -20 gem_summary.txt >> $GITHUB_STEP_SUMMARY || echo "No summary available" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "---" >> $GITHUB_STEP_SUMMARY
-          echo "🤖 *Powered by GitHub Copilot + GitHub Models API*" >> $GITHUB_STEP_SUMMARY
