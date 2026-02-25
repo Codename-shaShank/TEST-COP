@@ -1,4 +1,7 @@
-Error: unknown flag: --input
+Error: unexpected response from the server: 403 Forbidden
+{"error":{"code":"no_access","message":"No access to model: openai/gpt-4o","details":"No access to model: openai/gpt-4o"}}
+
+
 Usage:
   gh models run [model] [prompt] [flags]
 
