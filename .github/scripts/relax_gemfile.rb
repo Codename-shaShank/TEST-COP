@@ -14,7 +14,8 @@ lockfile = File.read('Gemfile.lock')
 # for any gem that is throwing a Bundler strict mismatch, or we can just relax the sqlite3 constraint
 # specifically since we know that's the one Dependabot bumped.
 
-updated_gemfile = gemfile.gsub(/gem\s+['"]sqlite3['"]\s*,\s*['"]~>\s*1\.4['"]/, 'gem "sqlite3", ">= 1.4"')
+# Keep sqlite3 1.x compatible - 2.x has breaking changes
+updated_gemfile = gemfile.gsub(/gem\s+['"]sqlite3['"]\s*,\s*['"]~>\s*1\.4['"](?:\s*,\s*['"]<\s*2\.0['"])?/, 'gem "sqlite3", ">= 1.4", "< 2.0"')
 
 # Also relax the ruby version if it's too strict
 updated_gemfile = updated_gemfile.gsub(/ruby\s+['"]3\.2\.0['"]/, 'ruby "~> 3.2"')

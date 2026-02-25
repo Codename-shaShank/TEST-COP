@@ -8,3 +8,8 @@ updates:
     labels:
       - "dependencies"
       - "dependabot"
+    ignore:
+      # Ignore sqlite3 2.x - has breaking changes, keep on 1.x
+      - dependency-name: "sqlite3"
+        update-types: ["version-update:semver-major"]
+        versions: [">=2.0.0"]
