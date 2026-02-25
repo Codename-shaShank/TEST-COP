@@ -31,6 +31,8 @@ jobs:
 
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
+        env:
+          BUNDLE_DEPLOYMENT: "false"
         with:
           ruby-version: 'default'
           bundler-cache: true
