@@ -1,3 +1,25 @@
+# ============================================
+# Auto-Fix Main - AI-Powered CI Issue Resolver
+# ============================================
+# This workflow automatically detects and fixes CI failures using AI (GitHub Models/Copilot)
+#
+# Features:
+# - Diagnoses CI environment issues (bundle install, dependency conflicts)
+# - Analyzes test failures with AI-powered suggestions
+# - Automatically applies fixes and commits changes
+# - Handles common issues: gem version conflicts, deployment mode errors
+# - Iterates up to 3 times to resolve issues
+#
+# Triggers:
+# - Automatically on PR with Gemfile/Gemfile.lock changes
+# - Manual: Actions tab → "Auto-Fix Main" → Run workflow
+# - Comment: `/autofix` on any PR
+#
+# Requirements:
+# - GitHub Models access (preview program)
+# - Write permissions for repo
+# ============================================
+
 name: Auto-Fix Main
 
 on:
@@ -66,20 +88,167 @@ jobs:
           bundle config list
 
       - name: Install dependencies
+        id: bundle_install
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+        run: |
+          echo "📦 Installing gems..."
+          set +e
+          bundle install --jobs 4 --retry 3 > bundle_install.log 2>&1
+          BUNDLE_EXIT=$?
+          
+          cat bundle_install.log
+          
+          if [ $BUNDLE_EXIT -ne 0 ]; then
+            echo "❌ Bundle install failed with exit code $BUNDLE_EXIT"
+            echo "bundle_failed=true" >> $GITHUB_OUTPUT
+            echo "exit_code=$BUNDLE_EXIT" >> $GITHUB_OUTPUT
+            
+            echo "## ❌ Bundle Install Failed" >> $GITHUB_STEP_SUMMARY
+            echo '```text' >> $GITHUB_STEP_SUMMARY
+            tail -n 50 bundle_install.log >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            
+            exit 0  # Don't fail the step, we'll handle it
+          else
+            echo "✅ Bundle install complete"
+            bundle list | grep sqlite3
+            echo "bundle_failed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: AI fix for bundle install failure
+        if: steps.bundle_install.outputs.bundle_failed == 'true'
+        id: fix_bundle_failure
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "📦 Installing gems..."
-          bundle install --jobs 4 --retry 3
+          echo "🤖 Analyzing bundle install failure with AI..."
           
-          echo "✅ Bundle install complete"
-          bundle list | grep sqlite3
+          cat > bundle_fix_prompt.txt << 'PROMPT_EOF'
+          You are a Ruby bundler expert. A bundle install failed in CI. Help fix it.
+
+          ## Error Log:
+          PROMPT_EOF
+          
+          tail -n 100 bundle_install.log >> bundle_fix_prompt.txt
+          
+          cat >> bundle_fix_prompt.txt << 'PROMPT_EOF'
+
+          ## Files Context:
+          ### Gemfile:
+          PROMPT_EOF
+          
+          cat Gemfile >> bundle_fix_prompt.txt
+          
+          cat >> bundle_fix_prompt.txt << 'PROMPT_EOF'
+
+          ### Gemfile.lock (relevant sections):
+          PROMPT_EOF
+          
+          grep -A20 "^PLATFORMS\|^GEM\|sqlite3" Gemfile.lock | head -50 >> bundle_fix_prompt.txt
+          
+          cat >> bundle_fix_prompt.txt << 'PROMPT_EOF'
+
+          ## Question:
+          What's causing the bundle install failure and how do I fix it?
+
+          Provide:
+          1. Root cause (1 sentence)
+          2. Exact commands to fix it (bash script format)
+          3. File changes needed (if any)
+
+          Format your response as executable bash commands when possible.
+          PROMPT_EOF
+          
+          if cat bundle_fix_prompt.txt | gh models run gpt-4o-mini - > bundle_ai_fix.txt 2>&1; then
+            echo "✅ Got AI fix suggestions"
+            echo "ai_fix_available=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ AI unavailable, using fallback fix"
+            echo "ai_fix_available=false" >> $GITHUB_OUTPUT
+            
+            # Fallback: Common fix for deployment mode issues
+            cat > bundle_ai_fix.txt << 'FALLBACK'
+          Root cause: Bundle is in deployment mode but Gemfile was modified.
+
+          Fix commands:
+          bundle config unset deployment
+          bundle config unset frozen  
+          bundle config set --local deployment false
+          bundle config set --local frozen false
+          bundle install --jobs 4
+          FALLBACK
+            echo "ai_fix_available=true" >> $GITHUB_OUTPUT
+          fi
+          
+          echo "## 🤖 AI Fix for Bundle Failure" >> $GITHUB_STEP_SUMMARY
+          echo '```text' >> $GITHUB_STEP_SUMMARY
+          cat bundle_ai_fix.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          
+          cat bundle_ai_fix.txt
+
+      - name: Apply bundle fix and retry
+        if: steps.fix_bundle_failure.outputs.ai_fix_available == 'true'
+        id: retry_bundle
+        continue-on-error: true
+        run: |
+          echo "🔧 Applying bundle fix..."
+          
+          # Extract and run bash commands from AI response
+          if grep -q "bundle config" bundle_ai_fix.txt; then
+            echo "Running AI-suggested commands..."
+            grep "bundle config\|bundle install" bundle_ai_fix.txt | while read cmd; do
+              echo "Running: $cmd"
+              eval "$cmd" || true
+            done
+          fi
+          
+          # Ensure deployment mode is off
+          bundle config unset deployment 2>/dev/null || true
+          bundle config unset frozen 2>/dev/null || true
+          bundle config set --local deployment false
+          bundle config set --local frozen false
+          
+          # Retry bundle install
+          echo "📦 Retrying bundle install..."
+          if bundle install --jobs 4 --retry 3; then
+            echo "✅ Bundle install succeeded!"
+            echo "bundle_fixed=true" >> $GITHUB_OUTPUT
+            bundle list | grep sqlite3
+          else
+            echo "❌ Bundle install still failing"
+            echo "bundle_fixed=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+      - name: Commit bundle fixes
+        if: steps.retry_bundle.outputs.bundle_fixed == 'true'
+        continue-on-error: true
+        run: |
+          if git status --porcelain | grep -q .; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            
+            git add Gemfile Gemfile.lock .bundle/config 2>/dev/null || true
+            git commit -m "fix(deps): resolve bundle install issues
+
+          - Fixed deployment mode configuration
+          - Updated gem constraints for compatibility
+          
+          Fixes were suggested by AI analysis of bundle errors." || true
+            
+            git push origin HEAD || echo "⚠️ Could not push changes"
+          fi
 
       - name: Install GitHub Models extension
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh extension install github/gh-models 2>/dev/null || echo "ℹ️ gh-models extension already installed or unavailable"
+          gh extension list | grep -i models || echo "⚠️ Models extension not available"
 
       # ============================================
       # Generate gem change summary
@@ -97,6 +266,212 @@ jobs:
               echo "EOF" >> $GITHUB_ENV
             fi
           fi
+
+      # ============================================
+      # CI Diagnostic - Check for common issues
+      # ============================================
+      - name: Diagnose CI environment and issues
+        id: ci_diagnostic
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "🔍 Running CI Diagnostics..." >> ci_diagnostic.txt
+          echo "================================" >> ci_diagnostic.txt
+          echo "" >> ci_diagnostic.txt
+          
+          # Check Ruby/Bundler versions
+          echo "## Environment Info:" >> ci_diagnostic.txt
+          echo "Ruby version: $(ruby --version)" >> ci_diagnostic.txt
+          echo "Bundler version: $(bundle --version)" >> ci_diagnostic.txt
+          echo "Rails version: $(bundle exec rails --version 2>&1 || echo 'Not installed')" >> ci_diagnostic.txt
+          echo "" >> ci_diagnostic.txt
+          
+          # Check Gemfile constraints
+          echo "## Gemfile Analysis:" >> ci_diagnostic.txt
+          if grep -n "sqlite3" Gemfile; then
+            echo "✓ sqlite3 found in Gemfile" >> ci_diagnostic.txt
+            grep "sqlite3" Gemfile >> ci_diagnostic.txt
+          else
+            echo "⚠️ sqlite3 not found in Gemfile" >> ci_diagnostic.txt
+          fi
+          echo "" >> ci_diagnostic.txt
+          
+          # Check Gemfile.lock for version conflicts
+          echo "## Gemfile.lock Analysis:" >> ci_diagnostic.txt
+          if grep -A5 "^  sqlite3" Gemfile.lock; then
+            echo "Installed sqlite3 version:" >> ci_diagnostic.txt
+            grep "sqlite3 (" Gemfile.lock >> ci_diagnostic.txt
+          fi
+          echo "" >> ci_diagnostic.txt
+          
+          # Check for version mismatches
+          echo "## Potential Issues:" >> ci_diagnostic.txt
+          GEMFILE_VERSION=$(grep "gem.*sqlite3" Gemfile | grep -oP '~>\s*\K[0-9.]+' || echo "unknown")
+          LOCK_VERSION=$(grep "sqlite3 (" Gemfile.lock | grep -oP '\(\K[0-9.]+' | head -1 || echo "unknown")
+          
+          echo "Gemfile wants: $GEMFILE_VERSION" >> ci_diagnostic.txt
+          echo "Gemfile.lock has: $LOCK_VERSION" >> ci_diagnostic.txt
+          
+          if [[ "$LOCK_VERSION" == 2.* ]] && [[ "$GEMFILE_VERSION" == 1.* ]]; then
+            echo "❌ CRITICAL: sqlite3 version mismatch detected!" >> ci_diagnostic.txt
+            echo "   Gemfile.lock has 2.x but Gemfile requires 1.x" >> ci_diagnostic.txt
+            echo "   This is a breaking change!" >> ci_diagnostic.txt
+            echo "requires_fix=true" >> $GITHUB_OUTPUT
+          fi
+          
+          # Check bundle config
+          echo "" >> ci_diagnostic.txt
+          echo "## Bundle Configuration:" >> ci_diagnostic.txt
+          bundle config list >> ci_diagnostic.txt
+          
+          cat ci_diagnostic.txt
+          
+          echo "## CI Diagnostic Report" >> $GITHUB_STEP_SUMMARY
+          echo '```text' >> $GITHUB_STEP_SUMMARY
+          cat ci_diagnostic.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: AI-powered CI issue analysis
+        if: steps.ci_diagnostic.outputs.requires_fix == 'true'
+        id: ai_ci_fix
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "🤖 Asking AI to analyze CI issues..."
+          
+          # Create AI prompt with context
+          cat > ci_fix_prompt.txt << 'PROMPT_EOF'
+          You are a GitHub Actions CI/CD expert and Ruby on Rails developer. Analyze this CI failure and provide fixes.
+
+          ## Context:
+          - This is a GitHub Actions workflow for a Rails application
+          - Dependabot may have upgraded gems causing compatibility issues
+          - Common issue: sqlite3 gem upgraded from 1.x to 2.x (breaking change)
+
+          ## Diagnostic Information:
+          PROMPT_EOF
+          
+          cat ci_diagnostic.txt >> ci_fix_prompt.txt
+          
+          cat >> ci_fix_prompt.txt << 'PROMPT_EOF'
+
+          ## Your Task:
+          Provide SPECIFIC fixes in this exact format:
+
+          ### Analysis:
+          [Explain what's wrong in 2-3 sentences]
+
+          ### Fix 1: Gemfile
+          ```ruby
+          # Updated Gemfile content (FULL FILE or just the lines to change)
+          gem "sqlite3", "~> 1.4", "< 2.0"
+          ```
+
+          ### Fix 2: Gemfile.lock (if needed)
+          ```text
+          # Specify EXACT line numbers and changes needed
+          Line 205: Change "sqlite3 (2.9.0-x86_64-linux-gnu)" to "sqlite3 (1.7.3-x86_64-linux)"
+          Line 251: Change "sqlite3 (~> 2.9)" to "sqlite3 (~> 1.4, < 2.0)"
+          ```
+
+          ### Fix 3: Workflow changes (if needed)
+          ```yaml
+          # Any workflow file changes needed
+          ```
+
+          ### Commands to run:
+          ```bash
+          # Shell commands to fix the issue
+          bundle config set --local deployment false
+          bundle update sqlite3
+          ```
+
+          Be specific and actionable. Only suggest changes that are necessary.
+          PROMPT_EOF
+          
+          echo "📤 Sending prompt to AI..."
+          cat ci_fix_prompt.txt
+          
+          # Try to get AI response
+          if cat ci_fix_prompt.txt | gh models run gpt-4o-mini - > ai_ci_fix.txt 2>&1; then
+            echo "✅ Got AI analysis"
+            echo "ai_fix_available=true" >> $GITHUB_OUTPUT
+          elif cat ci_fix_prompt.txt | gh models run openai-gpt-4o-mini - > ai_ci_fix.txt 2>&1; then
+            echo "✅ Got AI analysis (backup model)"
+            echo "ai_fix_available=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ AI models unavailable" > ai_ci_fix.txt
+            echo "ai_fix_available=false" >> $GITHUB_OUTPUT
+          fi
+          
+          echo "## 🤖 AI Analysis of CI Issues" >> $GITHUB_STEP_SUMMARY
+          echo '```text' >> $GITHUB_STEP_SUMMARY
+          cat ai_ci_fix.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          
+          cat ai_ci_fix.txt
+
+      - name: Apply AI-suggested CI fixes
+        if: steps.ai_ci_fix.outputs.ai_fix_available == 'true'
+        id: apply_ci_fixes
+        continue-on-error: true
+        run: |
+          echo "🔧 Applying AI-suggested fixes..."
+          
+          # Check if AI suggested updating Gemfile.lock
+          if grep -q "Gemfile.lock" ai_ci_fix.txt; then
+            echo "📝 AI suggested Gemfile.lock changes"
+            
+            # Look for specific version recommendations
+            if grep -q "sqlite3.*1\.[0-9]" ai_ci_fix.txt; then
+              echo "Downgrading sqlite3 in Gemfile.lock..."
+              
+              # Update Gemfile.lock to use 1.x
+              sed -i 's/sqlite3 (2\.9\.0-x86_64-linux-gnu)/sqlite3 (1.7.3-x86_64-linux)/g' Gemfile.lock
+              sed -i 's/sqlite3 (~> 2\.9)/sqlite3 (~> 1.4, < 2.0)/g' Gemfile.lock
+              
+              echo "✅ Updated Gemfile.lock"
+            fi
+          fi
+          
+          # Re-run bundle install with updated lock file
+          if git diff --name-only | grep -q 'Gemfile'; then
+            echo "📦 Running bundle install after Gemfile changes..."
+            bundle config set --local deployment false
+            bundle config set --local frozen false
+            bundle install --jobs 4 || echo "⚠️ Bundle install had issues"
+          fi
+          
+          # Check if changes were made
+          if git status --porcelain | grep -q .; then
+            echo "✅ CI fixes applied"
+            echo "fixes_applied=true" >> $GITHUB_OUTPUT
+            
+            git diff
+          else
+            echo "ℹ️ No changes needed"
+            echo "fixes_applied=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit CI fixes
+        if: steps.apply_ci_fixes.outputs.fixes_applied == 'true'
+        continue-on-error: true
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          git add -A
+          git commit -m "fix(ci): apply AI-suggested fixes for CI compatibility issues
+
+          - Fixed sqlite3 version compatibility
+          - Updated Gemfile/Gemfile.lock constraints
+          - Resolved bundle install conflicts
+          
+          Co-authored-by: GitHub Actions <github-actions[bot]@users.noreply.github.com>" || echo "Nothing to commit"
+          
+          git push origin HEAD || echo "⚠️ Push failed, may need manual intervention"
 
       # ============================================
       # Initial test run
@@ -136,29 +511,98 @@ jobs:
         run: |
           echo "🔍 Iteration 1: Analyzing failures and generating fixes..."
           
-          if [ ! -f .github/scripts/build_ai_prompt.sh ]; then
-            echo "⚠️ build_ai_prompt.sh not found, skipping AI fix"
-            echo "fixes_generated=false" >> $GITHUB_OUTPUT
-            exit 0
-          fi
+          # Create comprehensive context for AI
+          cat > ai_context.txt << 'CONTEXT_EOF'
+          # Context Information
+
+          ## Repository Structure:
+          CONTEXT_EOF
           
-          chmod +x .github/scripts/build_ai_prompt.sh
-          .github/scripts/build_ai_prompt.sh 1 test_output.txt > prompt_1.txt 2>&1 || true
+          find . -name "*.rb" -o -name "*.yml" -o -name "Gemfile*" | grep -v vendor | grep -v ".git" | head -30 >> ai_context.txt
+          
+          cat >> ai_context.txt << 'CONTEXT_EOF'
+
+          ## Gemfile:
+          CONTEXT_EOF
+          cat Gemfile >> ai_context.txt
+          
+          cat >> ai_context.txt << 'CONTEXT_EOF'
+
+          ## Recent Changes:
+          CONTEXT_EOF
+          git log --oneline -5 >> ai_context.txt 2>/dev/null || echo "No git history" >> ai_context.txt
+          
+          cat >> ai_context.txt << 'CONTEXT_EOF'
+
+          ## Bundle Info:
+          CONTEXT_EOF
+          bundle list 2>&1 | grep -i "sqlite3\|rails\|ruby" >> ai_context.txt
+          
+          if [ ! -f .github/scripts/build_ai_prompt.sh ]; then
+            echo "⚠️ build_ai_prompt.sh not found, creating AI prompt manually..."
+            
+            cat > prompt_1.txt << 'PROMPT_EOF'
+          You are an expert Ruby on Rails and CI/CD engineer. Tests failed in CI. Analyze and fix.
+
+          ## Test Output (last 100 lines):
+          PROMPT_EOF
+            
+            tail -n 100 test_output.txt >> prompt_1.txt
+            
+            cat >> prompt_1.txt << 'PROMPT_EOF'
+
+          ## Context:
+          PROMPT_EOF
+            cat ai_context.txt >> prompt_1.txt
+            
+            cat >> prompt_1.txt << 'PROMPT_EOF'
+
+          ## Your Task:
+          1. Identify the root cause of test failures
+          2. Provide specific fixes (file paths, line numbers, exact code)
+          3. Format response as:
+
+          ### ANALYSIS:
+          [Brief explanation]
+
+          ### FIX: path/to/file.rb
+          ```ruby
+          # Exact code to add/change
+          ```
+
+          ### COMMIT_MESSAGE: 
+          fix: [brief description]
+
+          Be specific and actionable.
+          PROMPT_EOF
+          else
+            chmod +x .github/scripts/build_ai_prompt.sh
+            .github/scripts/build_ai_prompt.sh 1 test_output.txt > prompt_1.txt 2>&1 || true
+            # Append our context
+            echo -e "\n## Additional Context:" >> prompt_1.txt
+            cat ai_context.txt >> prompt_1.txt
+          fi
           
           echo "## AI Prompt (iteration 1)" >> $GITHUB_STEP_SUMMARY
           echo '```text' >> $GITHUB_STEP_SUMMARY
-          head -30 prompt_1.txt >> $GITHUB_STEP_SUMMARY
+          head -50 prompt_1.txt >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
           
-          # Try multiple AI models
+          # Try multiple AI models with better error handling
+          echo "🤖 Requesting AI analysis..."
           if cat prompt_1.txt | gh models run gpt-4o-mini - > fixes_iteration_1.txt 2>&1; then
             echo "✅ Got AI response from gpt-4o-mini"
             echo "fixes_generated=true" >> $GITHUB_OUTPUT
           elif cat prompt_1.txt | gh models run openai-gpt-4o-mini - > fixes_iteration_1.txt 2>&1; then
             echo "✅ Got AI response from openai-gpt-4o-mini"
             echo "fixes_generated=true" >> $GITHUB_OUTPUT
+          elif cat prompt_1.txt | gh models run gpt-3.5-turbo - > fixes_iteration_1.txt 2>&1; then
+            echo "✅ Got AI response from gpt-3.5-turbo"
+            echo "fixes_generated=true" >> $GITHUB_OUTPUT
           else
-            echo "❌ Failed to get AI suggestions - all models unavailable" > fixes_iteration_1.txt
+            echo "❌ Failed to get AI suggestions - all models unavailable" 
+            echo "Error: Check if GitHub Models is enabled for your account" > fixes_iteration_1.txt
+            echo "Visit: https://github.com/marketplace/models" >> fixes_iteration_1.txt
             echo "fixes_generated=false" >> $GITHUB_OUTPUT
           fi
           
@@ -352,6 +796,114 @@ jobs:
       # ============================================
       # Summary
       # ============================================
+      - name: Generate detailed fix report
+        if: always()
+        continue-on-error: true
+        run: |
+          cat > fix_report.md << 'REPORT_EOF'
+          # 🤖 AI-Powered CI Fix Report
+
+          ## 🔍 Diagnostics Performed
+
+          ### Environment Check
+          REPORT_EOF
+          
+          if [ -f ci_diagnostic.txt ]; then
+            cat ci_diagnostic.txt >> fix_report.md
+          else
+            echo "No diagnostic data available" >> fix_report.md
+          fi
+          
+          cat >> fix_report.md << 'REPORT_EOF'
+
+          ## 🤖 AI Analysis Results
+
+          ### CI Issues
+          REPORT_EOF
+          
+          if [ -f ai_ci_fix.txt ]; then
+            echo "✅ AI analyzed CI configuration issues" >> fix_report.md
+            echo '```' >> fix_report.md
+            head -50 ai_ci_fix.txt >> fix_report.md
+            echo '```' >> fix_report.md
+          else
+            echo "No CI-specific analysis performed" >> fix_report.md
+          fi
+          
+          cat >> fix_report.md << 'REPORT_EOF'
+
+          ### Bundle Install Issues
+          REPORT_EOF
+          
+          if [ -f bundle_ai_fix.txt ]; then
+            echo "✅ AI analyzed bundle install failures" >> fix_report.md
+            echo '```' >> fix_report.md
+            cat bundle_ai_fix.txt >> fix_report.md
+            echo '```' >> fix_report.md
+          else
+            echo "No bundle issues detected" >> fix_report.md
+          fi
+          
+          cat >> fix_report.md << 'REPORT_EOF'
+
+          ### Test Failures
+          REPORT_EOF
+          
+          if [ -f fixes_iteration_1.txt ]; then
+            echo "✅ AI analyzed test failures (Iteration 1)" >> fix_report.md
+          fi
+          if [ -f fixes_iteration_2.txt ]; then
+            echo "✅ AI provided additional fixes (Iteration 2)" >> fix_report.md
+          fi
+          if [ -f fixes_iteration_3.txt ]; then
+            echo "✅ AI attempted final fixes (Iteration 3)" >> fix_report.md
+          fi
+          
+          cat >> fix_report.md << 'REPORT_EOF'
+
+          ## 📊 Results Summary
+
+          REPORT_EOF
+          
+          echo "- CI Diagnostic: ${{ steps.ci_diagnostic.outcome }}" >> fix_report.md
+          echo "- AI CI Fix: ${{ steps.ai_ci_fix.outcome }}" >> fix_report.md
+          echo "- Bundle Install: ${{ steps.bundle_install.outcome }}" >> fix_report.md
+          echo "- Bundle Fix Applied: ${{ steps.retry_bundle.outcome }}" >> fix_report.md
+          echo "- Initial Tests: ${{ steps.initial_tests.outcome }}" >> fix_report.md
+          echo "- Test After Fix 1: ${{ steps.test_after_fix_1.outcome }}" >> fix_report.md
+          echo "- Test After Fix 2: ${{ steps.test_after_fix_2.outcome }}" >> fix_report.md
+          echo "- Final Test: ${{ steps.final_test.outcome }}" >> fix_report.md
+          
+          cat >> fix_report.md << 'REPORT_EOF'
+
+          ## 🎯 Recommendations
+
+          REPORT_EOF
+          
+          INITIAL_EXIT="${{ steps.initial_tests.outputs.test_exit_code }}"
+          FINAL_EXIT="${{ steps.final_test.outputs.test_exit_code }}"
+          BUNDLE_FAILED="${{ steps.bundle_install.outputs.bundle_failed }}"
+          
+          if [ "$BUNDLE_FAILED" == "true" ]; then
+            echo "- ⚠️ **Bundle install is failing** - Review Gemfile.lock for version conflicts" >> fix_report.md
+            echo "- Consider pinning breaking gems (e.g., sqlite3 < 2.0)" >> fix_report.md
+          fi
+          
+          if [ "$INITIAL_EXIT" != "0" ] && [ "$FINAL_EXIT" == "0" ]; then
+            echo "- ✅ **AI successfully fixed the issues!**" >> fix_report.md
+            echo "- Review the commits made by github-actions[bot]" >> fix_report.md
+          elif [ "$INITIAL_EXIT" != "0" ]; then
+            echo "- ❌ **Manual intervention needed**" >> fix_report.md
+            echo "- Review AI suggestions in the logs above" >> fix_report.md
+            echo "- Check if GitHub Models has API access" >> fix_report.md
+            echo "- Consider running fixes locally: \`bundle update <gem>\`" >> fix_report.md
+          fi
+          
+          cat fix_report.md
+          
+          # Also output to step summary
+          cat fix_report.md >> $GITHUB_STEP_SUMMARY
+
       - name: Summary
         if: always()
         run: |
@@ -362,9 +914,23 @@ jobs:
           FIX1_EXIT="${{ steps.test_after_fix_1.outputs.test_exit_code }}"
           FIX2_EXIT="${{ steps.test_after_fix_2.outputs.test_exit_code }}"
           FINAL_EXIT="${{ steps.final_test.outputs.test_exit_code }}"
+          BUNDLE_FAILED="${{ steps.bundle_install.outputs.bundle_failed }}"
+          BUNDLE_FIXED="${{ steps.retry_bundle.outputs.bundle_fixed }}"
 
           echo "### Test Results:" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Check bundle issues first
+          if [ "$BUNDLE_FAILED" == "true" ]; then
+            if [ "$BUNDLE_FIXED" == "true" ]; then
+              echo "⚠️ Bundle install initially failed but **AI fixed it**" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "❌ **Bundle install failed** - CI cannot proceed" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "**Action needed:** Review Gemfile/Gemfile.lock for version conflicts" >> $GITHUB_STEP_SUMMARY
+              exit 0
+            fi
+          fi
 
           if [ "$INITIAL_EXIT" == "0" ]; then
             echo "✅ **Tests passed on first run** - no fixes needed" >> $GITHUB_STEP_SUMMARY
@@ -373,26 +939,31 @@ jobs:
             echo "" >> $GITHUB_STEP_SUMMARY
 
             if [ "$FIX1_EXIT" == "0" ]; then
-              echo "✅ **Tests passed after iteration 1**" >> $GITHUB_STEP_SUMMARY
+              echo "✅ **Tests passed after AI fix iteration 1**" >> $GITHUB_STEP_SUMMARY
             elif [ "$FIX2_EXIT" == "0" ]; then
-              echo "✅ **Tests passed after iteration 2**" >> $GITHUB_STEP_SUMMARY
+              echo "✅ **Tests passed after AI fix iteration 2**" >> $GITHUB_STEP_SUMMARY
             elif [ "$FINAL_EXIT" == "0" ]; then
-              echo "✅ **Tests passed after iteration 3**" >> $GITHUB_STEP_SUMMARY
+              echo "✅ **Tests passed after AI fix iteration 3**" >> $GITHUB_STEP_SUMMARY
             elif [ -n "$FINAL_EXIT" ]; then
-              echo "❌ **Tests still failing after 3 iterations**" >> $GITHUB_STEP_SUMMARY
+              echo "❌ **Tests still failing after 3 AI fix iterations**" >> $GITHUB_STEP_SUMMARY
               echo "" >> $GITHUB_STEP_SUMMARY
-              echo "🔍 Manual review required" >> $GITHUB_STEP_SUMMARY
+              echo "🔍 **Manual review required**" >> $GITHUB_STEP_SUMMARY
+              echo "- Check AI suggestions in workflow logs" >> $GITHUB_STEP_SUMMARY
+              echo "- Review commits made by github-actions[bot]" >> $GITHUB_STEP_SUMMARY
+              echo "- Verify GitHub Models API access" >> $GITHUB_STEP_SUMMARY
             else
               echo "⚠️ **Auto-fix iterations incomplete**" >> $GITHUB_STEP_SUMMARY
               echo "" >> $GITHUB_STEP_SUMMARY
-              echo "Check logs for details" >> $GITHUB_STEP_SUMMARY
+              echo "Check workflow logs for details" >> $GITHUB_STEP_SUMMARY
             fi
           else
             echo "⚠️ **Initial tests did not run**" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "Check workflow conditions" >> $GITHUB_STEP_SUMMARY
+            echo "Check workflow conditions and bundle install" >> $GITHUB_STEP_SUMMARY
           fi
 
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "---" >> $GITHUB_STEP_SUMMARY
-          echo "Workflow: \`auto-fix-main\`" >> $GITHUB_STEP_SUMMARY
+          echo "🤖 **Powered by:** GitHub Models AI + Copilot" >> $GITHUB_STEP_SUMMARY
+          echo "📝 **Workflow:** \`auto-fix-main\`" >> $GITHUB_STEP_SUMMARY
+          echo "🔗 **Need help?** Review the detailed fix report above" >> $GITHUB_STEP_SUMMARY
