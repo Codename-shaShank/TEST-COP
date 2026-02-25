@@ -31,11 +31,13 @@ jobs:
 
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
-        env:
-          BUNDLE_DEPLOYMENT: "false"
         with:
           ruby-version: 'default'
-          bundler-cache: true
+
+      - name: Install dependencies
+        run: |
+          bundle config set --local deployment false
+          bundle install --jobs 4
 
       # ============================================
       # Generate gem change summary
