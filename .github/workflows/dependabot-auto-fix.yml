@@ -36,6 +36,9 @@ jobs:
 
       - name: Install dependencies
         run: |
+          if [ -f .github/scripts/relax_gemfile.rb ]; then
+            ruby .github/scripts/relax_gemfile.rb
+          fi
           bundle config set --local deployment false
           bundle install --jobs 4
 
