@@ -79,6 +79,43 @@ jobs:
           echo "📝 Updated Gemfile:"
           cat Gemfile | grep -A2 -B2 "sqlite3" || true
 
+      - name: Fix Gemfile/Gemfile.lock version mismatch
+        id: fix_version_mismatch
+        run: |
+          echo "🔍 Checking for Gemfile/Gemfile.lock version mismatches..."
+          
+          # Extract versions from Gemfile and Gemfile.lock
+          GEMFILE_SQLITE=$(grep "gem.*sqlite3" Gemfile | head -1)
+          LOCK_SQLITE_VERSION=$(grep "^    sqlite3 (" Gemfile.lock | grep -oP '\(\K[0-9.]+' | head -1 || echo "")
+          LOCK_SQLITE_CONSTRAINT=$(grep "^  sqlite3 " Gemfile.lock | head -1)
+          
+          echo "Gemfile constraint: $GEMFILE_SQLITE"
+          echo "Gemfile.lock version: $LOCK_SQLITE_VERSION"
+          echo "Gemfile.lock constraint: $LOCK_SQLITE_CONSTRAINT"
+          
+          # Check for version mismatch (2.x in lock, 1.x in Gemfile)
+          if [[ "$LOCK_SQLITE_VERSION" == 2.* ]] && echo "$GEMFILE_SQLITE" | grep -q "< 2\|~> 1"; then
+            echo "❌ MISMATCH DETECTED: Gemfile.lock has sqlite3 2.x but Gemfile requires 1.x"
+            echo "🔧 Fixing Gemfile.lock to use sqlite3 1.7.3..."
+            
+            # Update Gemfile.lock to use 1.x version
+            sed -i 's/sqlite3 (2\.[0-9.]*-x86_64-linux[^)]*)/sqlite3 (1.7.3-x86_64-linux)/g' Gemfile.lock
+            sed -i 's/^  sqlite3 (~> 2\.[0-9.]*)/  sqlite3 (~> 1.4, < 2.0)/g' Gemfile.lock
+            
+            echo "✅ Updated Gemfile.lock to match Gemfile constraints"
+            echo "mismatch_fixed=true" >> $GITHUB_OUTPUT
+            
+            echo "Updated Gemfile.lock:"
+            grep -A2 -B2 "sqlite3" Gemfile.lock | head -20
+          elif [[ "$LOCK_SQLITE_VERSION" == 1.* ]] && echo "$GEMFILE_SQLITE" | grep -q "~> 2"; then
+            echo "❌ MISMATCH DETECTED: Gemfile.lock has sqlite3 1.x but Gemfile requires 2.x"
+            echo "⚠️ Manual update needed - sqlite3 2.x has breaking changes"
+            echo "mismatch_fixed=false" >> $GITHUB_OUTPUT
+          else
+            echo "✅ No version mismatch detected"
+            echo "mismatch_fixed=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Configure Bundler for development mode
         run: |
           echo "🔧 Configuring Bundler..."
@@ -307,17 +344,36 @@ jobs:
           
           # Check for version mismatches
           echo "## Potential Issues:" >> ci_diagnostic.txt
-          GEMFILE_VERSION=$(grep "gem.*sqlite3" Gemfile | grep -oP '~>\s*\K[0-9.]+' || echo "unknown")
+          GEMFILE_CONSTRAINT=$(grep "gem.*sqlite3" Gemfile | head -1)
           LOCK_VERSION=$(grep "sqlite3 (" Gemfile.lock | grep -oP '\(\K[0-9.]+' | head -1 || echo "unknown")
+          LOCK_CONSTRAINT=$(grep "^  sqlite3 " Gemfile.lock | head -1 || echo "unknown")
           
-          echo "Gemfile wants: $GEMFILE_VERSION" >> ci_diagnostic.txt
-          echo "Gemfile.lock has: $LOCK_VERSION" >> ci_diagnostic.txt
+          echo "Gemfile constraint: $GEMFILE_CONSTRAINT" >> ci_diagnostic.txt
+          echo "Gemfile.lock has version: $LOCK_VERSION" >> ci_diagnostic.txt
+          echo "Gemfile.lock constraint: $LOCK_CONSTRAINT" >> ci_diagnostic.txt
+          echo "" >> ci_diagnostic.txt
           
-          if [[ "$LOCK_VERSION" == 2.* ]] && [[ "$GEMFILE_VERSION" == 1.* ]]; then
-            echo "❌ CRITICAL: sqlite3 version mismatch detected!" >> ci_diagnostic.txt
-            echo "   Gemfile.lock has 2.x but Gemfile requires 1.x" >> ci_diagnostic.txt
-            echo "   This is a breaking change!" >> ci_diagnostic.txt
+          # Check for 2.x in lock with 1.x in Gemfile
+          if [[ "$LOCK_VERSION" == 2.* ]] && echo "$GEMFILE_CONSTRAINT" | grep -q "< 2\|~> 1"; then
+            echo "❌ CRITICAL: Gemfile/Gemfile.lock mismatch!" >> ci_diagnostic.txt
+            echo "   - Gemfile requires: sqlite3 1.x (or < 2.0)" >> ci_diagnostic.txt
+            echo "   - Gemfile.lock has: sqlite3 $LOCK_VERSION" >> ci_diagnostic.txt
+            echo "   - This causes bundle install to fail in deployment mode" >> ci_diagnostic.txt
+            echo "   - Auto-fix will update Gemfile.lock to match" >> ci_diagnostic.txt
             echo "requires_fix=true" >> $GITHUB_OUTPUT
+          # Check for 1.x in lock with 2.x in Gemfile
+          elif [[ "$LOCK_VERSION" == 1.* ]] && echo "$GEMFILE_CONSTRAINT" | grep -q "~> 2"; then
+            echo "⚠️ WARNING: Gemfile wants 2.x but lock has 1.x" >> ci_diagnostic.txt
+            echo "   - sqlite3 2.x has breaking changes" >> ci_diagnostic.txt
+            echo "   - Manual review recommended" >> ci_diagnostic.txt
+            echo "requires_fix=true" >> $GITHUB_OUTPUT
+          # Check if version fixed flag was set
+          elif [ "${{ steps.fix_version_mismatch.outputs.mismatch_fixed }}" == "true" ]; then
+            echo "✅ Version mismatch was auto-fixed" >> ci_diagnostic.txt
+            echo "requires_fix=false" >> $GITHUB_OUTPUT
+          else
+            echo "✅ No version mismatch detected" >> ci_diagnostic.txt
+            echo "requires_fix=false" >> $GITHUB_OUTPUT
           fi
           
           # Check bundle config
