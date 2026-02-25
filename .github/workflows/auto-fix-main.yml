@@ -1,4 +1,4 @@
-name: Dependabot Auto-Fix
+name: Auto-Fix Main
 
 on:
   pull_request:
@@ -6,19 +6,21 @@ on:
       - 'Gemfile'
       - 'Gemfile.lock'
     types: [opened, reopened, synchronize]
+  workflow_dispatch:  # Allow manual trigger
   issue_comment:
     types: [created]
 
 jobs:
   auto-fix-dependabot:
-    # if: ${{ github.actor == 'dependabot[bot]' }}  # Uncomment after testing
-    if: github.event_name == 'pull_request' || (github.event_name == 'issue_comment' && github.event.comment.body == '/autofix')
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || (github.event_name == 'issue_comment' && github.event.comment.body == '/autofix')
     runs-on: ubuntu-latest
     permissions:
       contents: write
       pull-requests: write
     steps:
-      # For an issue comment, the checkout ref is the PR ref
+      # ============================================
+      # Checkout
+      # ============================================
       - name: Get PR branch
         id: get_branch
         if: github.event_name == 'issue_comment'
@@ -26,43 +28,74 @@ jobs:
 
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event_name == 'issue_comment' && steps.get_branch.outputs.head_ref || github.head_ref }}
+          ref: ${{ github.event_name == 'issue_comment' && steps.get_branch.outputs.head_ref || github.head_ref || github.ref }}
           fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
+      # ============================================
+      # Ruby Setup - NO CACHE, we'll handle manually
+      # ============================================
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: 'default'
-          bundler-cache: false  # Disable auto bundle install, we'll do it manually after relaxing Gemfile
+          ruby-version: '3.2.10'
+          bundler-cache: false  # CRITICAL: Don't use cache, we need to handle Gemfile changes
+
+      # ============================================
+      # Relax Gemfile & Install Dependencies
+      # ============================================
+      - name: Relax Gemfile constraints
+        run: |
+          echo "📝 Original Gemfile:"
+          cat Gemfile | grep -A2 -B2 "sqlite3" || true
+          
+          if [ -f .github/scripts/relax_gemfile.rb ]; then
+            echo "🔧 Running relax_gemfile.rb..."
+            ruby .github/scripts/relax_gemfile.rb
+          fi
+          
+          echo "📝 Updated Gemfile:"
+          cat Gemfile | grep -A2 -B2 "sqlite3" || true
+
+      - name: Configure Bundler for development mode
+        run: |
+          echo "🔧 Configuring Bundler..."
+          bundle config set --local deployment false
+          bundle config set --local frozen false
+          bundle config set --local path vendor/bundle
+          bundle config list
 
       - name: Install dependencies
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Install gh-models extension (ignore if already installed)
-          gh extension install github/gh-models 2>/dev/null || echo "gh-models extension already installed or unavailable"
+          echo "📦 Installing gems..."
+          bundle install --jobs 4 --retry 3
           
-          # Relax Gemfile constraints BEFORE bundle install
-          if [ -f .github/scripts/relax_gemfile.rb ]; then
-            ruby .github/scripts/relax_gemfile.rb
-          fi
-          
-          # Configure bundle to NOT use deployment mode (allows Gemfile changes)
-          bundle config set --local deployment false
-          bundle config set --local path vendor/bundle
-          bundle install --jobs 4
+          echo "✅ Bundle install complete"
+          bundle list | grep sqlite3
+
+      - name: Install GitHub Models extension
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh extension install github/gh-models 2>/dev/null || echo "ℹ️ gh-models extension already installed or unavailable"
 
       # ============================================
       # Generate gem change summary
       # ============================================
       - name: Generate gem change summary
         id: gem_summary
+        continue-on-error: true
         run: |
           if [ -f .github/scripts/gem_diff.rb ]; then
-            ruby .github/scripts/gem_diff.rb > gem_summary.txt 2>&1
-            echo "GEM_SUMMARY<<EOF" >> $GITHUB_ENV
-            cat gem_summary.txt >> $GITHUB_ENV
-            echo "EOF" >> $GITHUB_ENV
+            echo "📊 Generating gem diff..."
+            ruby .github/scripts/gem_diff.rb > gem_summary.txt 2>&1 || true
+            if [ -f gem_summary.txt ]; then
+              echo "GEM_SUMMARY<<EOF" >> $GITHUB_ENV
+              cat gem_summary.txt >> $GITHUB_ENV
+              echo "EOF" >> $GITHUB_ENV
+            fi
           fi
 
       # ============================================
@@ -72,6 +105,7 @@ jobs:
         id: initial_tests
         continue-on-error: true
         run: |
+          echo "🧪 Running initial tests..."
           set +e
           bin/rails test:prepare > test_output.txt 2>&1
           bin/rails test >> test_output.txt 2>&1
@@ -80,9 +114,15 @@ jobs:
           
           echo "## Initial Test Output" >> $GITHUB_STEP_SUMMARY
           echo '```text' >> $GITHUB_STEP_SUMMARY
-          cat test_output.txt | tail -n 50 >> $GITHUB_STEP_SUMMARY
+          tail -n 100 test_output.txt >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
           echo "Exit code: $TEST_EXIT" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "$TEST_EXIT" == "0" ]; then
+            echo "✅ Tests passed!"
+          else
+            echo "❌ Tests failed with exit code $TEST_EXIT"
+          fi
 
       # ============================================
       # Auto-fix loop - Iteration 1
@@ -90,24 +130,35 @@ jobs:
       - name: Auto-fix iteration 1
         if: steps.initial_tests.outputs.test_exit_code != '0'
         id: fix_iteration_1
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "Iteration 1: Analyzing failures and generating fixes..."
+          echo "🔍 Iteration 1: Analyzing failures and generating fixes..."
+          
+          if [ ! -f .github/scripts/build_ai_prompt.sh ]; then
+            echo "⚠️ build_ai_prompt.sh not found, skipping AI fix"
+            echo "fixes_generated=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
           chmod +x .github/scripts/build_ai_prompt.sh
-          .github/scripts/build_ai_prompt.sh 1 test_output.txt > prompt_1.txt
+          .github/scripts/build_ai_prompt.sh 1 test_output.txt > prompt_1.txt 2>&1 || true
+          
           echo "## AI Prompt (iteration 1)" >> $GITHUB_STEP_SUMMARY
           echo '```text' >> $GITHUB_STEP_SUMMARY
-          head -20 prompt_1.txt >> $GITHUB_STEP_SUMMARY
+          head -30 prompt_1.txt >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
           
-          # Try multiple models in order of preference
+          # Try multiple AI models
           if cat prompt_1.txt | gh models run gpt-4o-mini - > fixes_iteration_1.txt 2>&1; then
+            echo "✅ Got AI response from gpt-4o-mini"
             echo "fixes_generated=true" >> $GITHUB_OUTPUT
           elif cat prompt_1.txt | gh models run openai-gpt-4o-mini - > fixes_iteration_1.txt 2>&1; then
+            echo "✅ Got AI response from openai-gpt-4o-mini"
             echo "fixes_generated=true" >> $GITHUB_OUTPUT
           else
-            echo "Failed to get AI suggestions - all models unavailable" > fixes_iteration_1.txt
+            echo "❌ Failed to get AI suggestions - all models unavailable" > fixes_iteration_1.txt
             echo "fixes_generated=false" >> $GITHUB_OUTPUT
           fi
           
@@ -119,58 +170,80 @@ jobs:
       - name: Apply fixes iteration 1
         if: steps.fix_iteration_1.outputs.fixes_generated == 'true'
         id: apply_fixes_1
+        continue-on-error: true
         run: |
-          python3 .github/scripts/apply_fixes.py fixes_iteration_1.txt
+          echo "🔧 Applying fixes from iteration 1..."
+          
+          if [ ! -f .github/scripts/apply_fixes.py ]; then
+            echo "⚠️ apply_fixes.py not found"
+            echo "fixes_applied=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          python3 .github/scripts/apply_fixes.py fixes_iteration_1.txt || true
 
-          if [ -f fixes_iteration_1.txt ]; then
-            # Re-run bundle install if Gemfile was modified
-            if git diff --name-only | grep -q 'Gemfile'; then
-              echo "Gemfile was modified, re-running bundle install..."
-              bundle install --jobs 4
-            fi
+          # Re-run bundle install if Gemfile was modified
+          if git diff --name-only | grep -q 'Gemfile'; then
+            echo "📦 Gemfile was modified, re-running bundle install..."
+            bundle install --jobs 4
           fi
 
           if git status --porcelain | grep -q .; then
+            echo "✅ Fixes applied"
             echo "fixes_applied=true" >> $GITHUB_OUTPUT
           else
+            echo "ℹ️ No changes to apply"
             echo "fixes_applied=false" >> $GITHUB_OUTPUT
           fi
 
       - name: Commit and push iteration 1
         if: steps.apply_fixes_1.outputs.fixes_applied == 'true'
+        continue-on-error: true
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          
           COMMIT_MSG=$(grep "COMMIT_MESSAGE:" fixes_iteration_1.txt 2>/dev/null | head -1 | sed 's/COMMIT_MESSAGE: *//' | tr -d '\r')
-          if [ -z "$COMMIT_MSG" ]; then COMMIT_MSG="fix: auto-fix iteration 1"; fi
+          if [ -z "$COMMIT_MSG" ]; then 
+            COMMIT_MSG="fix: auto-fix iteration 1"
+          fi
+          
           git add -A
-          git commit -m "$COMMIT_MSG"
-          git push origin HEAD
+          git commit -m "$COMMIT_MSG" || echo "Nothing to commit"
+          git push origin HEAD || echo "Push failed"
 
       - name: Test after iteration 1
         if: steps.apply_fixes_1.outputs.fixes_applied == 'true'
         id: test_after_fix_1
         continue-on-error: true
         run: |
+          echo "🧪 Testing after iteration 1..."
           set +e
           bin/rails test:prepare > test_output_1.txt 2>&1
           bin/rails test >> test_output_1.txt 2>&1
           TEST_EXIT=$?
-          cat test_output_1.txt
+          tail -n 50 test_output_1.txt
           echo "test_exit_code=$TEST_EXIT" >> $GITHUB_OUTPUT
 
       # ============================================
       # Auto-fix loop - Iteration 2
       # ============================================
       - name: Auto-fix iteration 2
-        if: steps.test_after_fix_1.outputs.test_exit_code != '0'
+        if: steps.test_after_fix_1.outputs.test_exit_code != '0' && steps.test_after_fix_1.outputs.test_exit_code != ''
         id: fix_iteration_2
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "Iteration 2: Analyzing remaining failures..."
+          echo "🔍 Iteration 2: Analyzing remaining failures..."
+          
+          if [ ! -f .github/scripts/build_ai_prompt.sh ]; then
+            echo "fixes_generated=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
           chmod +x .github/scripts/build_ai_prompt.sh
-          .github/scripts/build_ai_prompt.sh 2 test_output_1.txt > prompt_2.txt
+          .github/scripts/build_ai_prompt.sh 2 test_output_1.txt > prompt_2.txt 2>&1 || true
           
           if cat prompt_2.txt | gh models run gpt-4o-mini - > fixes_iteration_2.txt 2>&1; then
             echo "fixes_generated=true" >> $GITHUB_OUTPUT
@@ -184,8 +257,9 @@ jobs:
 
       - name: Apply fixes iteration 2
         if: steps.fix_iteration_2.outputs.fixes_generated == 'true'
+        continue-on-error: true
         run: |
-          python3 .github/scripts/apply_fixes.py fixes_iteration_2.txt
+          python3 .github/scripts/apply_fixes.py fixes_iteration_2.txt || true
 
           if git diff --name-only | grep -q 'Gemfile'; then
             bundle install --jobs 4
@@ -197,8 +271,8 @@ jobs:
             COMMIT_MSG=$(grep "COMMIT_MESSAGE:" fixes_iteration_2.txt 2>/dev/null | head -1 | sed 's/COMMIT_MESSAGE: *//' | tr -d '\r')
             if [ -z "$COMMIT_MSG" ]; then COMMIT_MSG="fix: iteration 2"; fi
             git add -A
-            git commit -m "$COMMIT_MSG"
-            git push origin HEAD
+            git commit -m "$COMMIT_MSG" || true
+            git push origin HEAD || true
           fi
 
       - name: Test after iteration 2
@@ -210,21 +284,28 @@ jobs:
           bin/rails test:prepare > test_output_2.txt 2>&1
           bin/rails test >> test_output_2.txt 2>&1
           TEST_EXIT=$?
-          cat test_output_2.txt
+          tail -n 50 test_output_2.txt
           echo "test_exit_code=$TEST_EXIT" >> $GITHUB_OUTPUT
 
       # ============================================
       # Auto-fix loop - Iteration 3 (Final)
       # ============================================
       - name: Auto-fix iteration 3 (final)
-        if: steps.test_after_fix_2.outputs.test_exit_code != '0'
+        if: steps.test_after_fix_2.outputs.test_exit_code != '0' && steps.test_after_fix_2.outputs.test_exit_code != ''
         id: fix_iteration_3
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "Iteration 3: Final fix attempt..."
+          echo "🔍 Iteration 3: Final fix attempt..."
+          
+          if [ ! -f .github/scripts/build_ai_prompt.sh ]; then
+            echo "fixes_generated=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
           chmod +x .github/scripts/build_ai_prompt.sh
-          .github/scripts/build_ai_prompt.sh 3 test_output_2.txt > prompt_3.txt
+          .github/scripts/build_ai_prompt.sh 3 test_output_2.txt > prompt_3.txt 2>&1 || true
           
           if cat prompt_3.txt | gh models run gpt-4o-mini - > fixes_iteration_3.txt 2>&1; then
             echo "fixes_generated=true" >> $GITHUB_OUTPUT
@@ -238,8 +319,9 @@ jobs:
 
       - name: Apply fixes iteration 3
         if: steps.fix_iteration_3.outputs.fixes_generated == 'true'
+        continue-on-error: true
         run: |
-          python3 .github/scripts/apply_fixes.py fixes_iteration_3.txt
+          python3 .github/scripts/apply_fixes.py fixes_iteration_3.txt || true
 
           if git diff --name-only | grep -q 'Gemfile'; then
             bundle install --jobs 4
@@ -251,8 +333,8 @@ jobs:
             COMMIT_MSG=$(grep "COMMIT_MESSAGE:" fixes_iteration_3.txt 2>/dev/null | head -1 | sed 's/COMMIT_MESSAGE: *//' | tr -d '\r')
             if [ -z "$COMMIT_MSG" ]; then COMMIT_MSG="fix: iteration 3 final"; fi
             git add -A
-            git commit -m "$COMMIT_MSG"
-            git push origin HEAD
+            git commit -m "$COMMIT_MSG" || true
+            git push origin HEAD || true
           fi
 
       - name: Final test
@@ -264,7 +346,7 @@ jobs:
           bin/rails test:prepare > final_test_output.txt 2>&1
           bin/rails test >> final_test_output.txt 2>&1
           TEST_EXIT=$?
-          cat final_test_output.txt
+          tail -n 50 final_test_output.txt
           echo "test_exit_code=$TEST_EXIT" >> $GITHUB_OUTPUT
 
       # ============================================
@@ -273,7 +355,7 @@ jobs:
       - name: Summary
         if: always()
         run: |
-          echo "## Dependabot Auto-Fix Summary" >> $GITHUB_STEP_SUMMARY
+          echo "## 🎯 Auto-Fix Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
           INITIAL_EXIT="${{ steps.initial_tests.outputs.test_exit_code }}"
@@ -281,22 +363,36 @@ jobs:
           FIX2_EXIT="${{ steps.test_after_fix_2.outputs.test_exit_code }}"
           FINAL_EXIT="${{ steps.final_test.outputs.test_exit_code }}"
 
+          echo "### Test Results:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
           if [ "$INITIAL_EXIT" == "0" ]; then
-            echo "✅ Tests passed on first run - no fixes needed" >> $GITHUB_STEP_SUMMARY
+            echo "✅ **Tests passed on first run** - no fixes needed" >> $GITHUB_STEP_SUMMARY
           elif [ -n "$INITIAL_EXIT" ]; then
-            echo "Tests failed - applied fixes..." >> $GITHUB_STEP_SUMMARY
+            echo "❌ Initial tests failed (exit code: $INITIAL_EXIT)" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
 
             if [ "$FIX1_EXIT" == "0" ]; then
-              echo "✅ Tests passed after iteration 1" >> $GITHUB_STEP_SUMMARY
+              echo "✅ **Tests passed after iteration 1**" >> $GITHUB_STEP_SUMMARY
             elif [ "$FIX2_EXIT" == "0" ]; then
-              echo "✅ Tests passed after iteration 2" >> $GITHUB_STEP_SUMMARY
+              echo "✅ **Tests passed after iteration 2**" >> $GITHUB_STEP_SUMMARY
             elif [ "$FINAL_EXIT" == "0" ]; then
-              echo "✅ Tests passed after iteration 3" >> $GITHUB_STEP_SUMMARY
+              echo "✅ **Tests passed after iteration 3**" >> $GITHUB_STEP_SUMMARY
             elif [ -n "$FINAL_EXIT" ]; then
-              echo "❌ Tests still failing after 3 iterations - manual review required" >> $GITHUB_STEP_SUMMARY
+              echo "❌ **Tests still failing after 3 iterations**" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "🔍 Manual review required" >> $GITHUB_STEP_SUMMARY
             else
-              echo "⚠️ Auto-fix iterations incomplete - check logs" >> $GITHUB_STEP_SUMMARY
+              echo "⚠️ **Auto-fix iterations incomplete**" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "Check logs for details" >> $GITHUB_STEP_SUMMARY
             fi
           else
-            echo "⚠️ Initial tests did not run - check workflow conditions" >> $GITHUB_STEP_SUMMARY
+            echo "⚠️ **Initial tests did not run**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Check workflow conditions" >> $GITHUB_STEP_SUMMARY
           fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "Workflow: \`auto-fix-main\`" >> $GITHUB_STEP_SUMMARY
