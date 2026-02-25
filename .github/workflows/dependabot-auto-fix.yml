@@ -38,7 +38,9 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh extension install github/gh-models
+          # Install gh-models extension (ignore if already installed)
+          gh extension install github/gh-models 2>/dev/null || echo "gh-models extension already installed or unavailable"
+          
           if [ -f .github/scripts/relax_gemfile.rb ]; then
             ruby .github/scripts/relax_gemfile.rb
           fi
@@ -269,18 +271,27 @@ jobs:
           echo "## Dependabot Auto-Fix Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          if [ "${{ steps.initial_tests.outputs.test_exit_code }}" == "0" ]; then
-            echo "Tests passed on first run - no fixes needed" >> $GITHUB_STEP_SUMMARY
-          else
+          INITIAL_EXIT="${{ steps.initial_tests.outputs.test_exit_code }}"
+          FIX1_EXIT="${{ steps.test_after_fix_1.outputs.test_exit_code }}"
+          FIX2_EXIT="${{ steps.test_after_fix_2.outputs.test_exit_code }}"
+          FINAL_EXIT="${{ steps.final_test.outputs.test_exit_code }}"
+
+          if [ "$INITIAL_EXIT" == "0" ]; then
+            echo "✅ Tests passed on first run - no fixes needed" >> $GITHUB_STEP_SUMMARY
+          elif [ -n "$INITIAL_EXIT" ]; then
             echo "Tests failed - applied fixes..." >> $GITHUB_STEP_SUMMARY
 
-            if [ "${{ steps.test_after_fix_1.outputs.test_exit_code }}" == "0" ]; then
-              echo "Tests passed after iteration 1" >> $GITHUB_STEP_SUMMARY
-            elif [ "${{ steps.test_after_fix_2.outputs.test_exit_code }}" == "0" ]; then
-              echo "Tests passed after iteration 2" >> $GITHUB_STEP_SUMMARY
-            elif [ "${{ steps.final_test.outputs.test_exit_code }}" == "0" ]; then
-              echo "Tests passed after iteration 3" >> $GITHUB_STEP_SUMMARY
+            if [ "$FIX1_EXIT" == "0" ]; then
+              echo "✅ Tests passed after iteration 1" >> $GITHUB_STEP_SUMMARY
+            elif [ "$FIX2_EXIT" == "0" ]; then
+              echo "✅ Tests passed after iteration 2" >> $GITHUB_STEP_SUMMARY
+            elif [ "$FINAL_EXIT" == "0" ]; then
+              echo "✅ Tests passed after iteration 3" >> $GITHUB_STEP_SUMMARY
+            elif [ -n "$FINAL_EXIT" ]; then
+              echo "❌ Tests still failing after 3 iterations - manual review required" >> $GITHUB_STEP_SUMMARY
             else
-              echo "Tests still failing after 3 iterations - manual review required" >> $GITHUB_STEP_SUMMARY
+              echo "⚠️ Auto-fix iterations incomplete - check logs" >> $GITHUB_STEP_SUMMARY
             fi
+          else
+            echo "⚠️ Initial tests did not run - check workflow conditions" >> $GITHUB_STEP_SUMMARY
           fi
