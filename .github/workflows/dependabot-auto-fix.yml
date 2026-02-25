@@ -59,12 +59,17 @@ jobs:
         id: initial_tests
         continue-on-error: true
         run: |
-          bin/rails test:prepare > test_output.txt 2>&1 || true
-          cat test_output.txt
+          set +e
+          bin/rails test:prepare > test_output.txt 2>&1
           bin/rails test >> test_output.txt 2>&1
           TEST_EXIT=$?
-          cat test_output.txt
           echo "test_exit_code=$TEST_EXIT" >> $GITHUB_OUTPUT
+          
+          echo "## Initial Test Output" >> $GITHUB_STEP_SUMMARY
+          echo '```text' >> $GITHUB_STEP_SUMMARY
+          cat test_output.txt | tail -n 50 >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "Exit code: $TEST_EXIT" >> $GITHUB_STEP_SUMMARY
 
       # ============================================
       # Auto-fix loop - Iteration 1
