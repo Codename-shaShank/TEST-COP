@@ -18,9 +18,15 @@ jobs:
       contents: write
       pull-requests: write
     steps:
+      # For an issue comment, the checkout ref is the PR ref
+      - name: Get PR branch
+        id: get_branch
+        if: github.event_name == 'issue_comment'
+        uses: xt0rted/pull-request-comment-branch@v2
+
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref }}
+          ref: ${{ github.event_name == 'issue_comment' && steps.get_branch.outputs.head_ref || github.head_ref }}
           fetch-depth: 0
 
       - name: Set up Ruby
