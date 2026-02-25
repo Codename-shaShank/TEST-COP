@@ -59,9 +59,11 @@ jobs:
         id: initial_tests
         continue-on-error: true
         run: |
-          bin/rails test:prepare 2>&1 | tee test_output.txt
-          bin/rails test 2>&1 | tee -a test_output.txt || true
-          TEST_EXIT=${PIPESTATUS[0]}
+          bin/rails test:prepare > test_output.txt 2>&1 || true
+          cat test_output.txt
+          bin/rails test >> test_output.txt 2>&1
+          TEST_EXIT=$?
+          cat test_output.txt
           echo "test_exit_code=$TEST_EXIT" >> $GITHUB_OUTPUT
 
       # ============================================
@@ -131,9 +133,11 @@ jobs:
         id: test_after_fix_1
         continue-on-error: true
         run: |
-          bin/rails test:prepare 2>&1 | tee test_output_1.txt
-          bin/rails test 2>&1 | tee -a test_output_1.txt || true
-          TEST_EXIT=${PIPESTATUS[0]}
+          bin/rails test:prepare > test_output_1.txt 2>&1 || true
+          cat test_output_1.txt
+          bin/rails test >> test_output_1.txt 2>&1
+          TEST_EXIT=$?
+          cat test_output_1.txt
           echo "test_exit_code=$TEST_EXIT" >> $GITHUB_OUTPUT
 
       # ============================================
@@ -191,9 +195,11 @@ jobs:
         id: test_after_fix_2
         continue-on-error: true
         run: |
-          bin/rails test:prepare 2>&1 | tee test_output_2.txt
-          bin/rails test 2>&1 | tee -a test_output_2.txt || true
-          TEST_EXIT=${PIPESTATUS[0]}
+          bin/rails test:prepare > test_output_2.txt 2>&1 || true
+          cat test_output_2.txt
+          bin/rails test >> test_output_2.txt 2>&1
+          TEST_EXIT=$?
+          cat test_output_2.txt
           echo "test_exit_code=$TEST_EXIT" >> $GITHUB_OUTPUT
 
       # ============================================
@@ -251,9 +257,11 @@ jobs:
         id: final_test
         continue-on-error: true
         run: |
-          bin/rails test:prepare 2>&1 | tee final_test_output.txt
-          bin/rails test 2>&1 | tee -a final_test_output.txt || true
-          TEST_EXIT=${PIPESTATUS[0]}
+          bin/rails test:prepare > final_test_output.txt 2>&1 || true
+          cat final_test_output.txt
+          bin/rails test >> final_test_output.txt 2>&1
+          TEST_EXIT=$?
+          cat final_test_output.txt
           echo "test_exit_code=$TEST_EXIT" >> $GITHUB_OUTPUT
 
       # ============================================
