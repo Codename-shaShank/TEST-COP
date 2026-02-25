@@ -46,9 +46,10 @@ jobs:
         id: initial_tests
         continue-on-error: true
         run: |
+          set -o pipefail
           bin/rails test:prepare 2>&1 | tee test_output.txt
-          bin/rails test 2>&1 | tee -a test_output.txt
-          echo "test_exit_code=$?" >> $GITHUB_OUTPUT
+          bin/rails test 2>&1 | tee -a test_output.txt; TEST_EXIT=$?
+          echo "test_exit_code=$TEST_EXIT" >> $GITHUB_OUTPUT
 
       # ============================================
       # Auto-fix loop - Iteration 1
@@ -59,47 +60,11 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "🔄 Iteration 1: Analyzing failures and generating fixes..."
-          
-          TEST_FAILURES=$(cat test_output.txt 2>/dev/null | tail -300)
-          GEM_CHANGES=$(git diff origin/main Gemfile.lock 2>/dev/null | head -200)
-          GEMFILE=$(cat Gemfile)
-          
-          PROMPT=$(cat <<'PROMPT_END'
-          You are an expert Ruby on Rails DevOps engineer. A Dependabot gem upgrade caused CI test failures.
-          
-          **Gem changes:**
-          PROMPT_END
-          echo "$GEM_CHANGES"
-          cat <<'PROMPT_END'
-          
-          **Test failures:**
-          PROMPT_END
-          echo "$TEST_FAILURES"
-          cat <<'PROMPT_END'
-          
-          **Your task:**
-          Analyze the failures and provide fixes for ANY files needed (app/, config/, lib/, Gemfile, .github/workflows/, etc).
-          Format EXACTLY as:
-          
-          FIX_FILE: path/to/file.ext
-          ```language
-          complete file content (not partial)
-          ```
-          
-          FIX_FILE: another/file.ext
-          ```language
-          complete file content
-          ```
-          
-          COMMIT_MESSAGE: Brief description
-          
-          Provide ALL fixes in one response.
-          PROMPT_END
-          )
-          
-          gh models run claude-3-5-sonnet-20241022 --input "$PROMPT" > fixes_iteration_1.txt 2>&1 || echo "Failed to get AI suggestions"
-          
+          echo "Iteration 1: Analyzing failures and generating fixes..."
+          chmod +x .github/scripts/build_ai_prompt.sh
+          .github/scripts/build_ai_prompt.sh 1 test_output.txt > prompt_1.txt
+          cat prompt_1.txt
+          gh models run claude-3-5-sonnet-20241022 --input "$(cat prompt_1.txt)" > fixes_iteration_1.txt 2>&1 || echo "Failed to get AI suggestions"
           cat fixes_iteration_1.txt
           echo "fixes_generated=true" >> $GITHUB_OUTPUT
 
@@ -110,33 +75,28 @@ jobs:
           python3 << 'PYTHON_END'
           import re
           import os
-          
+
           try:
               with open('fixes_iteration_1.txt', 'r') as f:
                   content = f.read()
-          except:
+          except Exception:
               exit(0)
-          
-          # Parse FIX_FILE blocks
+
           pattern = r'FIX_FILE:\s*(.+?)\n```(\w+)\n(.*?)```'
           matches = re.findall(pattern, content, re.DOTALL)
-          
+
           for filepath, lang, file_content in matches:
               filepath = filepath.strip()
               file_content = file_content.rstrip()
-              
-              # Create directories if needed
               os.makedirs(os.path.dirname(filepath) or '.', exist_ok=True)
-              
               with open(filepath, 'w') as f:
                   f.write(file_content)
-              print(f"✅ {filepath}")
-          
+              print(f"Applied fix: {filepath}")
+
           if not matches:
-              print("No fixes found")
-          
+              print("No fixes found in AI response")
           PYTHON_END
-          
+
           if git status --porcelain | grep -q .; then
             echo "fixes_applied=true" >> $GITHUB_OUTPUT
           else
@@ -148,9 +108,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          
           COMMIT_MSG=$(grep "COMMIT_MESSAGE:" fixes_iteration_1.txt 2>/dev/null | head -1 | sed 's/COMMIT_MESSAGE: //' || echo "fix: auto-fix iteration 1")
-          
           git add -A
           git commit -m "$COMMIT_MSG"
           git push origin HEAD
@@ -160,9 +118,10 @@ jobs:
         id: test_after_fix_1
         continue-on-error: true
         run: |
+          set -o pipefail
           bin/rails test:prepare 2>&1 | tee test_output_1.txt
-          bin/rails test 2>&1 | tee -a test_output_1.txt
-          echo "test_exit_code=$?" >> $GITHUB_OUTPUT
+          bin/rails test 2>&1 | tee -a test_output_1.txt; TEST_EXIT=$?
+          echo "test_exit_code=$TEST_EXIT" >> $GITHUB_OUTPUT
 
       # ============================================
       # Auto-fix loop - Iteration 2
@@ -173,29 +132,10 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "🔄 Iteration 2: Analyzing remaining failures..."
-          
-          TEST_FAILURES=$(cat test_output_1.txt 2>/dev/null | tail -300)
-          
-          PROMPT=$(cat <<'PROMPT_END'
-          Fixes were applied in iteration 1, but tests still fail. Provide additional fixes.
-          
-          **Remaining failures:**
-          PROMPT_END
-          echo "$TEST_FAILURES"
-          cat <<'PROMPT_END'
-          
-          Format as before:
-          FIX_FILE: path/to/file.ext
-          ```language
-          content
-          ```
-          
-          COMMIT_MESSAGE: Description
-          PROMPT_END
-          )
-          
-          gh models run claude-3-5-sonnet-20241022 --input "$PROMPT" > fixes_iteration_2.txt 2>&1 || echo "Failed"
+          echo "Iteration 2: Analyzing remaining failures..."
+          chmod +x .github/scripts/build_ai_prompt.sh
+          .github/scripts/build_ai_prompt.sh 2 test_output_1.txt > prompt_2.txt
+          gh models run claude-3-5-sonnet-20241022 --input "$(cat prompt_2.txt)" > fixes_iteration_2.txt 2>&1 || echo "Failed"
           cat fixes_iteration_2.txt
           echo "fixes_generated=true" >> $GITHUB_OUTPUT
 
@@ -205,26 +145,25 @@ jobs:
           python3 << 'PYTHON_END'
           import re
           import os
-          
+
           try:
               with open('fixes_iteration_2.txt', 'r') as f:
                   content = f.read()
-          except:
+          except Exception:
               exit(0)
-          
+
           pattern = r'FIX_FILE:\s*(.+?)\n```(\w+)\n(.*?)```'
           matches = re.findall(pattern, content, re.DOTALL)
-          
+
           for filepath, lang, file_content in matches:
               filepath = filepath.strip()
               file_content = file_content.rstrip()
               os.makedirs(os.path.dirname(filepath) or '.', exist_ok=True)
               with open(filepath, 'w') as f:
                   f.write(file_content)
-              print(f"✅ {filepath}")
-          
+              print(f"Applied fix: {filepath}")
           PYTHON_END
-          
+
           if git status --porcelain | grep -q .; then
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -239,9 +178,10 @@ jobs:
         id: test_after_fix_2
         continue-on-error: true
         run: |
+          set -o pipefail
           bin/rails test:prepare 2>&1 | tee test_output_2.txt
-          bin/rails test 2>&1 | tee -a test_output_2.txt
-          echo "test_exit_code=$?" >> $GITHUB_OUTPUT
+          bin/rails test 2>&1 | tee -a test_output_2.txt; TEST_EXIT=$?
+          echo "test_exit_code=$TEST_EXIT" >> $GITHUB_OUTPUT
 
       # ============================================
       # Auto-fix loop - Iteration 3 (Final)
@@ -252,29 +192,10 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "🔄 Iteration 3: Final fix attempt..."
-          
-          TEST_FAILURES=$(cat test_output_2.txt 2>/dev/null | tail -300)
-          
-          PROMPT=$(cat <<'PROMPT_END'
-          Final attempt after 2 iterations. Provide all necessary fixes to make tests pass.
-          
-          **Failures:**
-          PROMPT_END
-          echo "$TEST_FAILURES"
-          cat <<'PROMPT_END'
-          
-          Format:
-          FIX_FILE: path/to/file.ext
-          ```language
-          content
-          ```
-          
-          COMMIT_MESSAGE: Description
-          PROMPT_END
-          )
-          
-          gh models run claude-3-5-sonnet-20241022 --input "$PROMPT" > fixes_iteration_3.txt 2>&1 || echo "Failed"
+          echo "Iteration 3: Final fix attempt..."
+          chmod +x .github/scripts/build_ai_prompt.sh
+          .github/scripts/build_ai_prompt.sh 3 test_output_2.txt > prompt_3.txt
+          gh models run claude-3-5-sonnet-20241022 --input "$(cat prompt_3.txt)" > fixes_iteration_3.txt 2>&1 || echo "Failed"
           cat fixes_iteration_3.txt
           echo "fixes_generated=true" >> $GITHUB_OUTPUT
 
@@ -284,26 +205,25 @@ jobs:
           python3 << 'PYTHON_END'
           import re
           import os
-          
+
           try:
               with open('fixes_iteration_3.txt', 'r') as f:
                   content = f.read()
-          except:
+          except Exception:
               exit(0)
-          
+
           pattern = r'FIX_FILE:\s*(.+?)\n```(\w+)\n(.*?)```'
           matches = re.findall(pattern, content, re.DOTALL)
-          
+
           for filepath, lang, file_content in matches:
               filepath = filepath.strip()
               file_content = file_content.rstrip()
               os.makedirs(os.path.dirname(filepath) or '.', exist_ok=True)
               with open(filepath, 'w') as f:
                   f.write(file_content)
-              print(f"✅ {filepath}")
-          
+              print(f"Applied fix: {filepath}")
           PYTHON_END
-          
+
           if git status --porcelain | grep -q .; then
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -318,9 +238,10 @@ jobs:
         id: final_test
         continue-on-error: true
         run: |
+          set -o pipefail
           bin/rails test:prepare 2>&1 | tee final_test_output.txt
-          bin/rails test 2>&1 | tee -a final_test_output.txt
-          echo "test_exit_code=$?" >> $GITHUB_OUTPUT
+          bin/rails test 2>&1 | tee -a final_test_output.txt; TEST_EXIT=$?
+          echo "test_exit_code=$TEST_EXIT" >> $GITHUB_OUTPUT
 
       # ============================================
       # Summary
@@ -328,21 +249,21 @@ jobs:
       - name: Summary
         if: always()
         run: |
-          echo "## 🤖 Dependabot Auto-Fix Summary" >> $GITHUB_STEP_SUMMARY
+          echo "## Dependabot Auto-Fix Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           if [ "${{ steps.initial_tests.outputs.test_exit_code }}" == "0" ]; then
-            echo "✅ Tests passed on first run - no fixes needed" >> $GITHUB_STEP_SUMMARY
+            echo "Tests passed on first run - no fixes needed" >> $GITHUB_STEP_SUMMARY
           else
-            echo "⚠️ Tests failed - applying fixes..." >> $GITHUB_STEP_SUMMARY
-            
+            echo "Tests failed - applied fixes..." >> $GITHUB_STEP_SUMMARY
+
             if [ "${{ steps.test_after_fix_1.outputs.test_exit_code }}" == "0" ]; then
-              echo "✅ Tests passed after iteration 1" >> $GITHUB_STEP_SUMMARY
+              echo "Tests passed after iteration 1" >> $GITHUB_STEP_SUMMARY
             elif [ "${{ steps.test_after_fix_2.outputs.test_exit_code }}" == "0" ]; then
-              echo "✅ Tests passed after iteration 2" >> $GITHUB_STEP_SUMMARY
+              echo "Tests passed after iteration 2" >> $GITHUB_STEP_SUMMARY
             elif [ "${{ steps.final_test.outputs.test_exit_code }}" == "0" ]; then
-              echo "✅ Tests passed after iteration 3" >> $GITHUB_STEP_SUMMARY
+              echo "Tests passed after iteration 3" >> $GITHUB_STEP_SUMMARY
             else
-              echo "❌ Tests still failing after 3 iterations - manual review required" >> $GITHUB_STEP_SUMMARY
+              echo "Tests still failing after 3 iterations - manual review required" >> $GITHUB_STEP_SUMMARY
             fi
           fi
