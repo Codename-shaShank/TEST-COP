@@ -6,10 +6,13 @@ on:
       - 'Gemfile'
       - 'Gemfile.lock'
     types: [opened, reopened, synchronize]
+  issue_comment:
+    types: [created]
 
 jobs:
   auto-fix-dependabot:
-    if: ${{ github.actor == 'dependabot[bot]' }}
+    # if: ${{ github.actor == 'dependabot[bot]' }}  # Uncomment after testing
+    if: github.event_name == 'pull_request' || (github.event_name == 'issue_comment' && github.event.comment.body == '/autofix')
     runs-on: ubuntu-latest
     permissions:
       contents: write
