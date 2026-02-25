@@ -59,9 +59,9 @@ jobs:
         id: initial_tests
         continue-on-error: true
         run: |
-          set -o pipefail
           bin/rails test:prepare 2>&1 | tee test_output.txt
-          bin/rails test 2>&1 | tee -a test_output.txt; TEST_EXIT=$?
+          bin/rails test 2>&1 | tee -a test_output.txt || true
+          TEST_EXIT=${PIPESTATUS[0]}
           echo "test_exit_code=$TEST_EXIT" >> $GITHUB_OUTPUT
 
       # ============================================
@@ -131,9 +131,9 @@ jobs:
         id: test_after_fix_1
         continue-on-error: true
         run: |
-          set -o pipefail
           bin/rails test:prepare 2>&1 | tee test_output_1.txt
-          bin/rails test 2>&1 | tee -a test_output_1.txt; TEST_EXIT=$?
+          bin/rails test 2>&1 | tee -a test_output_1.txt || true
+          TEST_EXIT=${PIPESTATUS[0]}
           echo "test_exit_code=$TEST_EXIT" >> $GITHUB_OUTPUT
 
       # ============================================
@@ -191,9 +191,9 @@ jobs:
         id: test_after_fix_2
         continue-on-error: true
         run: |
-          set -o pipefail
           bin/rails test:prepare 2>&1 | tee test_output_2.txt
-          bin/rails test 2>&1 | tee -a test_output_2.txt; TEST_EXIT=$?
+          bin/rails test 2>&1 | tee -a test_output_2.txt || true
+          TEST_EXIT=${PIPESTATUS[0]}
           echo "test_exit_code=$TEST_EXIT" >> $GITHUB_OUTPUT
 
       # ============================================
@@ -251,9 +251,9 @@ jobs:
         id: final_test
         continue-on-error: true
         run: |
-          set -o pipefail
           bin/rails test:prepare 2>&1 | tee final_test_output.txt
-          bin/rails test 2>&1 | tee -a final_test_output.txt; TEST_EXIT=$?
+          bin/rails test 2>&1 | tee -a final_test_output.txt || true
+          TEST_EXIT=${PIPESTATUS[0]}
           echo "test_exit_code=$TEST_EXIT" >> $GITHUB_OUTPUT
 
       # ============================================
