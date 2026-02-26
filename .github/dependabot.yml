@@ -4,7 +4,7 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-    open-pull-requests-limit: 6
+    open-pull-requests-limit: 7
     labels:
       - "dependencies"
       - "dependabot"
@@ -13,3 +13,4 @@ updates:
       - dependency-name: "sqlite3"
         update-types: ["version-update:semver-major"]
         versions: [">=2.0.0"]
+
