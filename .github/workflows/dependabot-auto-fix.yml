@@ -66,6 +66,204 @@ jobs:
           fi
 
       # ============================================
+      # Detect Dependency Upgrades
+      # ============================================
+      - name: Detect dependency version changes
+        id: detect_upgrades
+        continue-on-error: true
+        run: |
+          echo "🔍 Detecting dependency upgrades from Dependabot PR..."
+          
+          # Get base branch Gemfile.lock for comparison
+          git fetch origin ${{ github.base_ref || 'main' }} --depth=1 2>/dev/null || true
+          
+          if git show origin/${{ github.base_ref || 'main' }}:Gemfile.lock > old_gemfile.lock 2>/dev/null; then
+            echo "✅ Got base branch Gemfile.lock for comparison"
+            
+            # Compare versions and find upgrades
+            cat > detect_upgrades.rb << 'RUBY_EOF'
+          require 'set'
+          
+          def parse_versions(lockfile)
+            versions = {}
+            File.readlines(lockfile).each do |line|
+              if line =~ /^\s{4}(\S+)\s+\(([^)]+)\)/
+                gem_name = $1
+                version = $2.split(',').first.strip
+                versions[gem_name] = version
+              end
+            end
+            versions
+          end
+          
+          old_versions = parse_versions('old_gemfile.lock')
+          new_versions = parse_versions('Gemfile.lock')
+          
+          upgrades = []
+          new_versions.each do |gem, new_ver|
+            old_ver = old_versions[gem]
+            if old_ver && old_ver != new_ver
+              upgrades << { gem: gem, old: old_ver, new: new_ver }
+            end
+          end
+          
+          puts "## Dependency Upgrades Detected:"
+          if upgrades.empty?
+            puts "No version changes detected"
+          else
+            upgrades.each do |u|
+              puts "- #{u[:gem]}: #{u[:old]} → #{u[:new]}"
+            end
+          end
+          
+          # Save to file for later use
+          File.open('upgrades.txt', 'w') do |f|
+            upgrades.each do |u|
+              f.puts "#{u[:gem]}|#{u[:old]}|#{u[:new]}"
+            end
+          end
+          RUBY_EOF
+            
+            ruby detect_upgrades.rb | tee upgrade_detection.txt
+            
+            if [ -f upgrades.txt ] && [ -s upgrades.txt ]; then
+              echo "has_upgrades=true" >> $GITHUB_OUTPUT
+              echo "📊 Upgrade Summary:"
+              cat upgrade_detection.txt
+            else
+              echo "has_upgrades=false" >> $GITHUB_OUTPUT
+              echo "No upgrades detected"
+            fi
+          else
+            echo "⚠️ Could not fetch base branch Gemfile.lock, skipping upgrade detection"
+            echo "has_upgrades=false" >> $GITHUB_OUTPUT
+          fi
+
+      # ============================================
+      # Fetch Changelogs/Release Notes
+      # ============================================
+      - name: Fetch upgrade guides and changelogs
+        if: steps.detect_upgrades.outputs.has_upgrades == 'true'
+        id: fetch_changelogs
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "📚 Fetching changelogs for upgraded gems..."
+          
+          cat > fetch_changelogs.rb << 'RUBY_EOF'
+          require 'net/http'
+          require 'uri'
+          require 'json'
+          
+          def fetch_github_release_notes(gem_name, old_version, new_version)
+            # Try common GitHub repo patterns
+            potential_repos = [
+              "#{gem_name}/#{gem_name}",
+              "rails/#{gem_name}",
+              "#{gem_name.gsub('-', '_')}/#{gem_name.gsub('-', '_')}"
+            ]
+            
+            potential_repos.each do |repo|
+              begin
+                uri = URI("https://api.github.com/repos/#{repo}/releases")
+                req = Net::HTTP::Get.new(uri)
+                req['Accept'] = 'application/vnd.github.v3+json'
+                req['Authorization'] = "token #{ENV['GH_TOKEN']}" if ENV['GH_TOKEN']
+                
+                res = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true, read_timeout: 10) { |http|
+                  http.request(req)
+                }
+                
+                if res.is_a?(Net::HTTPSuccess)
+                  releases = JSON.parse(res.body)
+                  relevant_releases = releases.select { |r| 
+                    tag = r['tag_name'].gsub(/^v/, '')
+                    tag >= old_version && tag <= new_version
+                  }
+                  
+                  if relevant_releases.any?
+                    return {
+                      source: "GitHub releases (#{repo})",
+                      notes: relevant_releases.map { |r| 
+                        "### #{r['name'] || r['tag_name']}\n#{r['body']}" 
+                      }.join("\n\n")
+                    }
+                  end
+                end
+              rescue => e
+                # Try next repo
+              end
+            end
+            nil
+          end
+          
+          def fetch_rubygems_changelog(gem_name)
+            begin
+              uri = URI("https://rubygems.org/api/v1/gems/#{gem_name}.json")
+              res = Net::HTTP.get_response(uri)
+              if res.is_a?(Net::HTTPSuccess)
+                data = JSON.parse(res.body)
+                changelog_uri = data['changelog_uri'] || data['source_code_uri']
+                return { source: "RubyGems", url: changelog_uri } if changelog_uri
+              end
+            rescue => e
+              # Ignore
+            end
+            nil
+          end
+          
+          upgrades_file = 'upgrades.txt'
+          unless File.exist?(upgrades_file)
+            puts "No upgrades file found"
+            exit 0
+          end
+          
+          all_notes = []
+          File.readlines(upgrades_file).each do |line|
+            gem_name, old_ver, new_ver = line.strip.split('|')
+            next unless gem_name
+            
+            puts "Fetching notes for #{gem_name} (#{old_ver} → #{new_ver})..."
+            
+            notes = fetch_github_release_notes(gem_name, old_ver, new_ver)
+            unless notes
+              notes = fetch_rubygems_changelog(gem_name)
+            end
+            
+            if notes
+              all_notes << "## #{gem_name} (#{old_ver} → #{new_ver})\n"
+              if notes[:notes]
+                all_notes << notes[:notes]
+              elsif notes[:url]
+                all_notes << "Changelog: #{notes[:url]}"
+              end
+              all_notes << "\n---\n"
+            else
+              all_notes << "## #{gem_name} (#{old_ver} → #{new_ver})\n"
+              all_notes << "No changelog found. Check: https://rubygems.org/gems/#{gem_name}\n---\n"
+            end
+          end
+          
+          File.write('changelogs.txt', all_notes.join("\n")) if all_notes.any?
+          RUBY_EOF
+          
+          ruby fetch_changelogs.rb 2>&1 | tee changelog_fetch.log
+          
+          if [ -f changelogs.txt ]; then
+            echo "✅ Fetched changelogs"
+            echo "changelogs_available=true" >> $GITHUB_OUTPUT
+            
+            echo "## 📚 Upgrade Guides & Changelogs" >> $GITHUB_STEP_SUMMARY
+            echo '```text' >> $GITHUB_STEP_SUMMARY
+            head -100 changelogs.txt >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ No changelogs fetched"
+            echo "changelogs_available=false" >> $GITHUB_OUTPUT
+          fi
+
+      # ============================================
       # Initial test run
       # ============================================
       - name: Run initial tests
@@ -94,11 +292,101 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "Iteration 1: Analyzing failures and generating fixes..."
-          chmod +x .github/scripts/build_ai_prompt.sh
-          .github/scripts/build_ai_prompt.sh 1 test_output.txt > prompt_1.txt
+          
+          # Build enhanced AI prompt with upgrade context
+          cat > prompt_1.txt << 'PROMPT_EOF'
+          You are an expert Ruby on Rails developer. Tests failed after dependency upgrades. Analyze and fix.
+
+          PROMPT_EOF
+          
+          # Add upgrade context if available
+          if [ -f upgrade_detection.txt ]; then
+            cat >> prompt_1.txt << 'PROMPT_EOF'
+          ## Dependency Upgrades:
+          PROMPT_EOF
+            cat upgrade_detection.txt >> prompt_1.txt
+            echo "" >> prompt_1.txt
+          fi
+          
+          # Add changelogs if available
+          if [ -f changelogs.txt ]; then
+            cat >> prompt_1.txt << 'PROMPT_EOF'
+          ## Upgrade Guides & Breaking Changes:
+          The following gems were upgraded. Review their changelogs for breaking changes:
+
+          PROMPT_EOF
+            head -200 changelogs.txt >> prompt_1.txt
+            echo "" >> prompt_1.txt
+          fi
+          
+          cat >> prompt_1.txt << 'PROMPT_EOF'
+
+          ## Test Output (showing failures):
+          PROMPT_EOF
+          
+          tail -n 150 test_output.txt >> prompt_1.txt
+          
+          cat >> prompt_1.txt << 'PROMPT_EOF'
+
+          ## Gemfile:
+          PROMPT_EOF
+          cat Gemfile >> prompt_1.txt
+          
+          cat >> prompt_1.txt << 'PROMPT_EOF'
+
+          ## Source Files (relevant to failures):
+          PROMPT_EOF
+          
+          # Extract file paths from error messages and include them
+          grep -oP '(?<=in `)(.+?)(?=:)' test_output.txt 2>/dev/null | grep "^app/" | sort -u | head -5 | while read file; do
+            if [ -f "$file" ]; then
+              echo "### File: $file" >> prompt_1.txt
+              echo '```ruby' >> prompt_1.txt
+              cat "$file" >> prompt_1.txt
+              echo '```' >> prompt_1.txt
+              echo "" >> prompt_1.txt
+            fi
+          done
+          
+          cat >> prompt_1.txt << 'PROMPT_EOF'
+
+          ## Your Task:
+          1. **Identify the root cause**: Focus on breaking changes from upgraded dependencies
+          2. **Provide specific fixes**: Include file paths, exact code changes
+          3. **Handle common upgrade issues**: 
+             - Method signature changes (argument count, keyword args)
+             - Renamed/moved methods or classes
+             - Configuration changes
+             - Import/require statement updates
+          4. **Format your response as**:
+
+          ### ANALYSIS:
+          [Brief explanation of what broke and why - mention specific gem if relevant]
+
+          ### FIX: path/to/file.rb
+          ```ruby
+          # Exact code to add/change
+          # Include enough context to locate the code
+          ```
+
+          ### FIX: path/to/another_file.rb
+          ```ruby
+          # More fixes if needed
+          ```
+
+          ### COMMIT_MESSAGE: 
+          fix: [brief description mentioning the dependency upgrade]
+
+          **Important**: 
+          - Be specific and actionable
+          - If a gem changed its API, show the OLD way and NEW way
+          - For method signature changes, show the updated call with correct arguments
+          - Include all necessary changes, even if across multiple files
+          PROMPT_EOF
+          
           echo "## AI Prompt (iteration 1)" >> $GITHUB_STEP_SUMMARY
           echo '```text' >> $GITHUB_STEP_SUMMARY
-          head -20 prompt_1.txt >> $GITHUB_STEP_SUMMARY
+          head -50 prompt_1.txt >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
           
           # Try multiple models in order of preference
@@ -169,8 +457,34 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "Iteration 2: Analyzing remaining failures..."
-          chmod +x .github/scripts/build_ai_prompt.sh
-          .github/scripts/build_ai_prompt.sh 2 test_output_1.txt > prompt_2.txt
+          
+          # Build prompt with context
+          cat > prompt_2.txt << 'PROMPT_EOF'
+          You are a Ruby/Rails expert. Previous fixes didn't resolve all test failures. Analyze remaining issues.
+
+          PROMPT_EOF
+          
+          if [ -f upgrade_detection.txt ]; then
+            echo "## Dependency Upgrades:" >> prompt_2.txt
+            cat upgrade_detection.txt >> prompt_2.txt
+            echo "" >> prompt_2.txt
+          fi
+          
+          if [ -f changelogs.txt ]; then
+            echo "## Breaking Changes (from changelogs):" >> prompt_2.txt
+            head -150 changelogs.txt >> prompt_2.txt
+            echo "" >> prompt_2.txt
+          fi
+          
+          echo "## Test Output (iteration 2):" >> prompt_2.txt
+          tail -n 150 test_output_1.txt >> prompt_2.txt
+          
+          echo "" >> prompt_2.txt
+          echo "## Previous Fix Attempt:" >> prompt_2.txt
+          cat fixes_iteration_1.txt | head -50 >> prompt_2.txt
+          
+          echo "" >> prompt_2.txt
+          echo "## Task: Fix remaining issues using ### FIX: path/to/file format" >> prompt_2.txt
           
           if cat prompt_2.txt | gh models run gpt-4o-mini - > fixes_iteration_2.txt 2>&1; then
             echo "fixes_generated=true" >> $GITHUB_OUTPUT
@@ -223,8 +537,37 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "Iteration 3: Final fix attempt..."
-          chmod +x .github/scripts/build_ai_prompt.sh
-          .github/scripts/build_ai_prompt.sh 3 test_output_2.txt > prompt_3.txt
+          
+          # Build final prompt with all context
+          cat > prompt_3.txt << 'PROMPT_EOF'
+          You are a Ruby/Rails expert. This is the FINAL attempt to fix test failures after dependency upgrades.
+
+          PROMPT_EOF
+          
+          if [ -f upgrade_detection.txt ]; then
+            echo "## Dependency Upgrades:" >> prompt_3.txt
+            cat upgrade_detection.txt >> prompt_3.txt
+            echo "" >> prompt_3.txt
+          fi
+          
+          if [ -f changelogs.txt ]; then
+            echo "## Breaking Changes:" >> prompt_3.txt
+            head -150 changelogs.txt >> prompt_3.txt
+            echo "" >> prompt_3.txt
+          fi
+          
+          echo "## Test Output (iteration 3):" >> prompt_3.txt
+          tail -n 150 test_output_2.txt >> prompt_3.txt
+          
+          echo "" >> prompt_3.txt
+          echo "## Previous Attempts:" >> prompt_3.txt
+          echo "### Fix 1:" >> prompt_3.txt
+          cat fixes_iteration_1.txt | head -30 >> prompt_3.txt
+          echo "### Fix 2:" >> prompt_3.txt
+          cat fixes_iteration_2.txt | head -30 >> prompt_3.txt
+          
+          echo "" >> prompt_3.txt
+          echo "## Task: Provide comprehensive fix using ### FIX: path/to/file format" >> prompt_3.txt
           
           if cat prompt_3.txt | gh models run gpt-4o-mini - > fixes_iteration_3.txt 2>&1; then
             echo "fixes_generated=true" >> $GITHUB_OUTPUT
