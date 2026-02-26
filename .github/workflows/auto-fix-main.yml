@@ -116,6 +116,46 @@ jobs:
             echo "mismatch_fixed=false" >> $GITHUB_OUTPUT
           fi
 
+      - name: Fix Puma/Rack compatibility
+        id: fix_puma_rack
+        run: |
+          echo "🔍 Checking for Puma/Rack compatibility issues..."
+          
+          # Check if Rack 3+ is in Gemfile.lock
+          RACK_VERSION=$(grep "^    rack (" Gemfile.lock | grep -oP '\(\K[0-9.]+' | head -1 || echo "")
+          # Check if Puma 5.x is in Gemfile.lock
+          PUMA_VERSION=$(grep "^    puma (" Gemfile.lock | grep -oP '\(\K[0-9.]+' | head -1 || echo "")
+          
+          echo "Rack version in lock: $RACK_VERSION"
+          echo "Puma version in lock: $PUMA_VERSION"
+          
+          # Detect incompatibility: Rack 3+ with Puma < 6
+          if [[ "$RACK_VERSION" == 3.* ]] || [[ "$RACK_VERSION" == 4.* ]]; then
+            if [[ "$PUMA_VERSION" == 5.* ]] || [[ -z "$PUMA_VERSION" && "$(grep 'gem.*puma' Gemfile)" == *'~> 5'* ]]; then
+              echo "❌ CRITICAL: Rack 3+ is not compatible with Puma 5.x!"
+              echo "🔧 Fixing: Updating Puma constraint in Gemfile..."
+              
+              # Update Gemfile to allow Puma 6+
+              sed -i 's/gem "puma", "~> 5\.0"/gem "puma", ">= 5.0"/g' Gemfile
+              sed -i "s/gem 'puma', '~> 5\.0'/gem 'puma', '>= 5.0'/g" Gemfile
+              
+              echo "✅ Updated Gemfile to allow Puma 6+"
+              echo "puma_fixed=true" >> $GITHUB_OUTPUT
+              
+              # Show the change
+              grep "puma" Gemfile || echo "Puma gem line not found"
+              
+              echo "📝 Changes:"
+              git diff Gemfile || echo "No git available"
+            else
+              echo "✅ No Puma/Rack incompatibility detected"
+              echo "puma_fixed=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "✅ Rack 2.x or not yet resolved - no Puma restriction needed"
+            echo "puma_fixed=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Configure Bundler for development mode
         run: |
           echo "🔧 Configuring Bundler..."
@@ -132,7 +172,16 @@ jobs:
         run: |
           echo "📦 Installing gems..."
           set +e
-          bundle install --jobs 4 --retry 3 > bundle_install.log 2>&1
+          
+          # If Puma was fixed, use bundle update to resolve dependencies
+          if [ "${{ steps.fix_puma_rack.outputs.puma_fixed }}" == "true" ]; then
+            echo "🔄 Running bundle update puma (since Puma constraint was relaxed)..."
+            bundle update puma --jobs 4 > bundle_install.log 2>&1
+          else
+            echo "📦 Running bundle install..."
+            bundle install --jobs 4 --retry 3 > bundle_install.log 2>&1
+          fi
+          
           BUNDLE_EXIT=$?
           
           cat bundle_install.log
@@ -262,7 +311,9 @@ jobs:
           fi
 
       - name: Commit bundle fixes
-        if: steps.retry_bundle.outputs.bundle_fixed == 'true'
+        if: |
+          steps.retry_bundle.outputs.bundle_fixed == 'true' || 
+          steps.fix_puma_rack.outputs.puma_fixed == 'true'
         continue-on-error: true
         run: |
           if git status --porcelain | grep -q .; then
@@ -270,12 +321,29 @@ jobs:
             git config user.email "github-actions[bot]@users.noreply.github.com"
             
             git add Gemfile Gemfile.lock .bundle/config 2>/dev/null || true
-            git commit -m "fix(deps): resolve bundle install issues
-
+            
+            # Build commit message based on what was fixed
+            COMMIT_MSG="fix(deps): resolve gem compatibility issues"
+            COMMIT_BODY="Fixes:"
+            
+            if [ "${{ steps.fix_puma_rack.outputs.puma_fixed }}" == "true" ]; then
+              COMMIT_BODY="$COMMIT_BODY
+          - Fixed Puma/Rack incompatibility (Rack 3+ requires Puma 6+)"
+            fi
+            
+            if [ "${{ steps.retry_bundle.outputs.bundle_fixed }}" == "true" ]; then
+              COMMIT_BODY="$COMMIT_BODY
           - Fixed deployment mode configuration
-          - Updated gem constraints for compatibility
-          
-          Fixes were suggested by AI analysis of bundle errors." || true
+          - Updated gem constraints for compatibility"
+            fi
+            
+            COMMIT_BODY="$COMMIT_BODY
+
+          Co-authored-by: GitHub Actions <github-actions[bot]@users.noreply.github.com>"
+            
+            git commit -m "$COMMIT_MSG
+
+$COMMIT_BODY" || true
             
             git push origin HEAD || echo "⚠️ Could not push changes"
           fi
