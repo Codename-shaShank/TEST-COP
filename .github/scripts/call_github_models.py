@@ -10,13 +10,13 @@ import json
 import urllib.request
 import urllib.error
 
-def call_github_models(prompt_text, model="gpt-4o-mini"):
+def call_github_models(prompt_text, model="gpt-4o"):
     """
     Call GitHub Models API using the correct endpoint and authentication
     
     Args:
         prompt_text: The prompt to send to the model
-        model: Model name (default: gpt-4o-mini)
+        model: Model name (default: gpt-4o)
     
     Returns:
         The model's response text, or error message if failed
@@ -29,6 +29,14 @@ def call_github_models(prompt_text, model="gpt-4o-mini"):
     
     # Allow model override from environment
     model = os.environ.get("MODEL_NAME", model)
+    
+    # Map common model aliases to correct names
+    model_map = {
+        'gpt-4o-mini': 'gpt-4o',
+        'openai/gpt-4o': 'gpt-4o',
+        'openai/gpt-4o-mini': 'gpt-4o',
+    }
+    model = model_map.get(model, model)
 
     # GitHub Models API endpoint
     api_endpoint = "https://models.inference.ai.azure.com/chat/completions"
