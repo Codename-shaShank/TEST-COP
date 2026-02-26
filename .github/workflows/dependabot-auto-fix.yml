@@ -287,8 +287,18 @@ jobs:
         id: fix_iteration_1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MODEL_NAME: openai/gpt-4o-mini
         run: |
           echo "Iteration 1: Analyzing failures and generating fixes..."
+
+          # If this is a /autofix comment, use the comment body as error input
+          if [ "${{ github.event_name }}" = "issue_comment" ]; then
+            printf '%s' "${{ github.event.comment.body }}" > comment_body.txt
+            sed '/^\/autofix/d' comment_body.txt | sed '/^[[:space:]]*$/d' > manual_errors.txt
+            if [ ! -s manual_errors.txt ]; then
+              rm -f manual_errors.txt
+            fi
+          fi
           
           # Build enhanced AI prompt with upgrade context
           cat > prompt_1.txt << 'PROMPT_EOF'
@@ -320,8 +330,12 @@ jobs:
 
           ## Test Output (showing failures):
           PROMPT_EOF
-          
-          tail -n 150 test_output.txt >> prompt_1.txt
+
+          if [ -f manual_errors.txt ]; then
+            tail -n 200 manual_errors.txt >> prompt_1.txt
+          else
+            tail -n 150 test_output.txt >> prompt_1.txt
+          fi
           
           cat >> prompt_1.txt << 'PROMPT_EOF'
 
@@ -450,6 +464,7 @@ jobs:
         id: fix_iteration_2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MODEL_NAME: openai/gpt-4o-mini
         run: |
           echo "Iteration 2: Analyzing remaining failures..."
           
@@ -528,6 +543,7 @@ jobs:
         id: fix_iteration_3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MODEL_NAME: openai/gpt-4o-mini
         run: |
           echo "Iteration 3: Final fix attempt..."
           
