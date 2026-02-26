@@ -16,7 +16,13 @@ jobs:
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          bundler-cache: true
+          bundler-cache: false
+      - name: Install gems
+        run: |
+          bundle config set --local deployment false
+          bundle config set --local frozen false
+          bundle config set --local path vendor/bundle
+          bundle install --jobs 4 --retry 3
       - name: Run Tests
         run: |
           bin/rails test:prepare
