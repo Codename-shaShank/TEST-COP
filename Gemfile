@@ -11,7 +11,7 @@ gem "sprockets-rails"
 
 # Use sqlite3 as the database for Active Record
 # Pin to 1.x for compatibility, 2.x has breaking changes
-gem "sqlite3", "~> 1.4", "< 2.0"
+gem "sqlite3", ">= 1.4", "< 2.0"
 
 # Use the Puma web server [https://github.com/puma/puma]
 # Updated to 6.0+ for Rails 8+ compatibility with Rack 3
