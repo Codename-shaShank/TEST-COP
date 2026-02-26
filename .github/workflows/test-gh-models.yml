@@ -1,0 +1,37 @@
+name: Test GitHub Models Access
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-models:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Test GitHub Models
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Installing gh-models extension..."
+          gh extension install github/gh-models 2>&1 || echo "Extension install result: $?"
+          
+          echo ""
+          echo "Listing installed extensions..."
+          gh extension list
+          
+          echo ""
+          echo "Testing model access..."
+          echo "Hello, can you respond?" | gh models run gpt-4o-mini - 2>&1 || echo "Model call failed with exit code: $?"
+          
+          echo ""
+          echo "Trying alternate model name..."
+          echo "Hello, can you respond?" | gh models run openai-gpt-4o-mini - 2>&1 || echo "Model call failed with exit code: $?"
+          
+          echo ""
+          echo "Checking gh auth status..."
+          gh auth status
+          
+          echo ""
+          echo "Listing available models (if command exists)..."
+          gh models list 2>&1 || echo "gh models list not available"

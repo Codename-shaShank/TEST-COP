@@ -37,11 +37,8 @@ jobs:
 
       - name: Install dependencies
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Install gh-models extension (ignore if already installed)
-          gh extension install github/gh-models 2>/dev/null || echo "gh-models extension already installed or unavailable"
-          
           # Relax Gemfile constraints BEFORE bundle install
           if [ -f .github/scripts/relax_gemfile.rb ]; then
             ruby .github/scripts/relax_gemfile.rb
@@ -389,13 +386,11 @@ jobs:
           head -50 prompt_1.txt >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
           
-          # Try multiple models in order of preference
-          if cat prompt_1.txt | gh models run gpt-4o-mini - > fixes_iteration_1.txt 2>&1; then
-            echo "fixes_generated=true" >> $GITHUB_OUTPUT
-          elif cat prompt_1.txt | gh models run openai-gpt-4o-mini - > fixes_iteration_1.txt 2>&1; then
+          # Call GitHub Models API with proper authentication
+          if python3 .github/scripts/call_github_models.py < prompt_1.txt > fixes_iteration_1.txt 2>&1; then
             echo "fixes_generated=true" >> $GITHUB_OUTPUT
           else
-            echo "Failed to get AI suggestions - all models unavailable" > fixes_iteration_1.txt
+            echo "Failed to get AI suggestions" >> fixes_iteration_1.txt
             echo "fixes_generated=false" >> $GITHUB_OUTPUT
           fi
           
@@ -486,9 +481,7 @@ jobs:
           echo "" >> prompt_2.txt
           echo "## Task: Fix remaining issues using ### FIX: path/to/file format" >> prompt_2.txt
           
-          if cat prompt_2.txt | gh models run gpt-4o-mini - > fixes_iteration_2.txt 2>&1; then
-            echo "fixes_generated=true" >> $GITHUB_OUTPUT
-          elif cat prompt_2.txt | gh models run openai-gpt-4o-mini - > fixes_iteration_2.txt 2>&1; then
+          if python3 .github/scripts/call_github_models.py < prompt_2.txt > fixes_iteration_2.txt 2>&1; then
             echo "fixes_generated=true" >> $GITHUB_OUTPUT
           else
             echo "Failed - models unavailable" > fixes_iteration_2.txt
@@ -569,9 +562,7 @@ jobs:
           echo "" >> prompt_3.txt
           echo "## Task: Provide comprehensive fix using ### FIX: path/to/file format" >> prompt_3.txt
           
-          if cat prompt_3.txt | gh models run gpt-4o-mini - > fixes_iteration_3.txt 2>&1; then
-            echo "fixes_generated=true" >> $GITHUB_OUTPUT
-          elif cat prompt_3.txt | gh models run openai-gpt-4o-mini - > fixes_iteration_3.txt 2>&1; then
+          if python3 .github/scripts/call_github_models.py < prompt_3.txt > fixes_iteration_3.txt 2>&1; then
             echo "fixes_generated=true" >> $GITHUB_OUTPUT
           else
             echo "Failed - models unavailable" > fixes_iteration_3.txt
