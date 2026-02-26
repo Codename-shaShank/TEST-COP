@@ -64,6 +64,18 @@ jobs:
           bundler-cache: false  # CRITICAL: Don't use cache, we need to handle Gemfile changes
 
       # ============================================
+      # Configure Bundler FIRST (before modifications)
+      # ============================================
+      - name: Configure Bundler for development mode
+        run: |
+          echo "🔧 Configuring Bundler for development mode..."
+          bundle config set --local deployment false
+          bundle config set --local frozen false
+          bundle config set --local path vendor/bundle
+          echo "📋 Bundle configuration:"
+          bundle config list
+
+      # ============================================
       # Relax Gemfile & Install Dependencies
       # ============================================
       - name: Relax Gemfile constraints
@@ -155,14 +167,6 @@ jobs:
             echo "✅ Rack 2.x or not yet resolved - no Puma restriction needed"
             echo "puma_fixed=false" >> $GITHUB_OUTPUT
           fi
-
-      - name: Configure Bundler for development mode
-        run: |
-          echo "🔧 Configuring Bundler..."
-          bundle config set --local deployment false
-          bundle config set --local frozen false
-          bundle config set --local path vendor/bundle
-          bundle config list
 
       - name: Install dependencies
         id: bundle_install
@@ -327,25 +331,23 @@ jobs:
             COMMIT_BODY="Fixes:"
             
             if [ "${{ steps.fix_puma_rack.outputs.puma_fixed }}" == "true" ]; then
-              COMMIT_BODY="$COMMIT_BODY
+              COMMIT_BODY="${COMMIT_BODY}
           - Fixed Puma/Rack incompatibility (Rack 3+ requires Puma 6+)"
             fi
             
             if [ "${{ steps.retry_bundle.outputs.bundle_fixed }}" == "true" ]; then
-              COMMIT_BODY="$COMMIT_BODY
+              COMMIT_BODY="${COMMIT_BODY}
           - Fixed deployment mode configuration
           - Updated gem constraints for compatibility"
             fi
             
-            COMMIT_BODY="$COMMIT_BODY
+            COMMIT_BODY="${COMMIT_BODY}
 
           Co-authored-by: GitHub Actions <github-actions[bot]@users.noreply.github.com>"
             
-            git commit -m "$COMMIT_MSG
-
-$COMMIT_BODY" || true
+            git commit -m "$COMMIT_MSG" -m "$COMMIT_BODY" || true
             
-            git push origin HEAD || echo "⚠️ Could not push changes"
+            git push origin HEAD || echo "Could not push changes"
           fi
 
       - name: Install GitHub Models extension
@@ -355,9 +357,6 @@ $COMMIT_BODY" || true
           gh extension install github/gh-models 2>/dev/null || echo "ℹ️ gh-models extension already installed or unavailable"
           gh extension list | grep -i models || echo "⚠️ Models extension not available"
 
-      # ============================================
-      # Generate gem change summary
-      # ============================================
       - name: Generate gem change summary
         id: gem_summary
         continue-on-error: true
