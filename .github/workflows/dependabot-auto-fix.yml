@@ -17,6 +17,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      models: read
     steps:
       # For an issue comment, the checkout ref is the PR ref
       - name: Get PR branch
