@@ -27,6 +27,9 @@ def call_github_models(prompt_text, model="gpt-4o-mini"):
     if not github_token:
         return "Error: GITHUB_TOKEN environment variable not set"
     
+    # Allow model override from environment
+    model = os.environ.get("MODEL_NAME", model)
+
     # GitHub Models API endpoint
     api_endpoint = "https://models.inference.ai.azure.com/chat/completions"
     
