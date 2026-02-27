@@ -362,38 +362,28 @@ jobs:
           
           cat >> prompt_1.txt << 'PROMPT_EOF'
 
-          ## Your Task:
-          1. **Identify the root cause**: Focus on breaking changes from upgraded dependencies
-          2. **Provide specific fixes**: Include file paths, exact code changes
-          3. **Handle common upgrade issues**: 
-             - Method signature changes (argument count, keyword args)
-             - Renamed/moved methods or classes
-             - Configuration changes
-             - Import/require statement updates
-          4. **Format your response as**:
+           ## Your Task (STRICT FORMAT):
 
-          ### ANALYSIS:
-          [Brief explanation of what broke and why - mention specific gem if relevant]
+           You MUST respond only in this machine-readable format.
 
-          ### FIX: path/to/file.rb
-          ```ruby
-          # Exact code to add/change
-          # Include enough context to locate the code
-          ```
+           For EACH file you want to change, output:
 
-          ### FIX: path/to/another_file.rb
-          ```ruby
-          # More fixes if needed
-          ```
+           ### FIX: relative/path/to/file.ext
+           ```LANG
+           # FULL NEW CONTENT OF THE FILE GOES HERE
+           # This must be the entire file, not a diff.
+           ```
 
-          ### COMMIT_MESSAGE: 
-          fix: [brief description mentioning the dependency upgrade]
+           Rules:
+           - `relative/path/to/file.ext` is from the repo root (e.g. `app/assets/tailwind/application.css`).
+           - `LANG` is a language tag like ruby, yml, yaml, js, css, scss, etc.
+           - Include the COMPLETE file contents in the code block (no `...`).
+           - You may output multiple `### FIX:` blocks, one per file.
+           - If no code change is needed, output exactly:
 
-          **Important**: 
-          - Be specific and actionable
-          - If a gem changed its API, show the OLD way and NEW way
-          - For method signature changes, show the updated call with correct arguments
-          - Include all necessary changes, even if across multiple files
+           NO_FIX_NEEDED
+
+           and nothing else.
           PROMPT_EOF
           
           echo "## AI Prompt (iteration 1)" >> $GITHUB_STEP_SUMMARY
@@ -507,8 +497,32 @@ jobs:
           echo "## Previous Fix Attempt:" >> prompt_2.txt
           cat fixes_iteration_1.txt | head -50 >> prompt_2.txt
           
-          echo "" >> prompt_2.txt
-          echo "## Task: Fix remaining issues using ### FIX: path/to/file format" >> prompt_2.txt
+          cat >> prompt_2.txt << 'PROMPT_EOF'
+
+          ## Your Task (STRICT FORMAT):
+
+          You MUST respond only in this machine-readable format.
+
+          For EACH file you want to change, output:
+
+          ### FIX: relative/path/to/file.ext
+          ```LANG
+          # FULL NEW CONTENT OF THE FILE GOES HERE
+          # This must be the entire file, not a diff.
+          ```
+
+          Rules:
+          - `relative/path/to/file.ext` is from the repo root (e.g. `app/assets/tailwind/application.css`).
+          - `LANG` is a language tag like ruby, yml, yaml, js, css, scss, etc.
+          - Include the COMPLETE file contents in the code block (no `...`).
+          - You may output multiple `### FIX:` blocks, one per file.
+          - If no code change is needed, output exactly:
+
+          NO_FIX_NEEDED
+
+          and nothing else.
+
+          PROMPT_EOF
           
           if python3 .github/scripts/call_github_models.py < prompt_2.txt > fixes_iteration_2.txt 2>&1; then
             echo "fixes_generated=true" >> $GITHUB_OUTPUT
@@ -600,8 +614,32 @@ jobs:
           echo "### Fix 2:" >> prompt_3.txt
           cat fixes_iteration_2.txt | head -30 >> prompt_3.txt
           
-          echo "" >> prompt_3.txt
-          echo "## Task: Provide comprehensive fix using ### FIX: path/to/file format" >> prompt_3.txt
+          cat >> prompt_3.txt << 'PROMPT_EOF'
+
+          ## Your Task (STRICT FORMAT):
+
+          You MUST respond only in this machine-readable format.
+
+          For EACH file you want to change, output:
+
+          ### FIX: relative/path/to/file.ext
+          ```LANG
+          # FULL NEW CONTENT OF THE FILE GOES HERE
+          # This must be the entire file, not a diff.
+          ```
+
+          Rules:
+          - `relative/path/to/file.ext` is from the repo root (e.g. `app/assets/tailwind/application.css`).
+          - `LANG` is a language tag like ruby, yml, yaml, js, css, scss, etc.
+          - Include the COMPLETE file contents in the code block (no `...`).
+          - You may output multiple `### FIX:` blocks, one per file.
+          - If no code change is needed, output exactly:
+
+          NO_FIX_NEEDED
+
+          and nothing else.
+
+          PROMPT_EOF
           
           if python3 .github/scripts/call_github_models.py < prompt_3.txt > fixes_iteration_3.txt 2>&1; then
             echo "fixes_generated=true" >> $GITHUB_OUTPUT
