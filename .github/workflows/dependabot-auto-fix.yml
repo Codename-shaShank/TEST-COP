@@ -532,7 +532,18 @@ jobs:
             git config user.email "github-actions[bot]@users.noreply.github.com"
             COMMIT_MSG=$(grep "COMMIT_MESSAGE:" fixes_iteration_2.txt 2>/dev/null | head -1 | sed 's/COMMIT_MESSAGE: *//' | tr -d '\r')
             if [ -z "$COMMIT_MSG" ]; then COMMIT_MSG="fix: iteration 2"; fi
+
             git add -A
+
+            # Safety: never commit bundler install artifacts
+            git reset -- vendor/bundle 2>/dev/null || true
+            git rm -r --cached vendor/bundle 2>/dev/null || true
+
+            if git diff --cached --quiet; then
+              echo "No changes to commit after excluding vendor/bundle; skipping push."
+              exit 0
+            fi
+
             git commit -m "$COMMIT_MSG"
             git push origin HEAD
           fi
@@ -664,4 +675,5 @@ jobs:
           else
             echo "⚠️ Initial tests did not run - check workflow conditions" >> $GITHUB_STEP_SUMMARY
           fi
+
 
