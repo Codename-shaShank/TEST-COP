@@ -394,35 +394,25 @@ gem "devise", "~> 4.9"
 
 ## Source Files (relevant to failures):
 
-## Your Task:
-1. **Identify the root cause**: Focus on breaking changes from upgraded dependencies
-2. **Provide specific fixes**: Include file paths, exact code changes
-3. **Handle common upgrade issues**: 
-   - Method signature changes (argument count, keyword args)
-   - Renamed/moved methods or classes
-   - Configuration changes
-   - Import/require statement updates
-4. **Format your response as**:
+ ## Your Task (STRICT FORMAT):
 
-### ANALYSIS:
-[Brief explanation of what broke and why - mention specific gem if relevant]
+ You MUST respond only in this machine-readable format.
 
-### FIX: path/to/file.rb
-```ruby
-# Exact code to add/change
-# Include enough context to locate the code
-```
+ For EACH file you want to change, output:
 
-### FIX: path/to/another_file.rb
-```ruby
-# More fixes if needed
-```
+ ### FIX: relative/path/to/file.ext
+ ```LANG
+ # FULL NEW CONTENT OF THE FILE GOES HERE
+ # This must be the entire file, not a diff.
+ ```
 
-### COMMIT_MESSAGE: 
-fix: [brief description mentioning the dependency upgrade]
+ Rules:
+ - `relative/path/to/file.ext` is from the repo root (e.g. `app/assets/tailwind/application.css`).
+ - `LANG` is a language tag like ruby, yml, yaml, js, css, scss, etc.
+ - Include the COMPLETE file contents in the code block (no `...`).
+ - You may output multiple `### FIX:` blocks, one per file.
+ - If no code change is needed, output exactly:
 
-**Important**: 
-- Be specific and actionable
-- If a gem changed its API, show the OLD way and NEW way
-- For method signature changes, show the updated call with correct arguments
-- Include all necessary changes, even if across multiple files
+ NO_FIX_NEEDED
+
+ and nothing else.
