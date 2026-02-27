@@ -1,23 +1,122 @@
-Error: unexpected response from the server: 403 Forbidden
-{"error":{"code":"no_access","message":"No access to model: openai/gpt-4o","details":"No access to model: openai/gpt-4o"}}
+### FIX 1: Resolve Tailwind Input File Missing Error
 
+#### Add Missing Tailwind Application CSS
+Create a new file for Tailwind's directives where required input CSS can be loaded:
 
-Usage:
-  gh models run [model] [prompt] [flags]
+**Path:** `app/assets/stylesheets/application.tailwind.css`  
+**Code:**
+```css
+/* Tailwind base styles */
+@import "tailwindcss/base";
+/* Tailwind component styles */
+@import "tailwindcss/components";
+/* Tailwind utility classes */
+@import "tailwindcss/utilities";
+```
 
-Examples:
-gh models run openai/gpt-4o-mini "how many types of hyena are there?"
-gh models run --org my-org openai/gpt-4o-mini "how many types of hyena are there?"
-gh models run --file prompt.yml --var name=Alice --var topic="machine learning"
+#### Update Precompile Configuration in Initializers
+Ensure the `application.tailwind.css` file is being precompiled:
 
+**Path:** `config/initializers/assets.rb`  
+**Code:**
+```ruby
+# Precompile Tailwind CSS file
+Rails.application.config.assets.precompile += %w[application.tailwind.css]
+```
 
-Flags:
-      --file string            Path to a .prompt.yml file.
-  -h, --help                   help for run
-      --max-tokens string      Limit the maximum tokens for the model response.
-      --org string             Organization to attribute usage to (omitting will attribute usage to the current actor
-      --system-prompt string   Prompt the system.
-      --temperature string     Controls randomness in the response, use lower to be more deterministic.
-      --top-p string           Controls text diversity by selecting the most probable words until a set probability is reached.
-      --var stringArray        Template variables for prompt files (can be used multiple times: --var name=value)
+#### Regenerate Tailwind Config
+Run the following command to ensure the Tailwind configuration file exists:
 
+```bash
+rails tailwindcss:install
+```
+This command will generate a `tailwind.config.js` at the project root if it is missing.
+
+---
+
+### FIX 2: Resolve SQLite3 Compatibility Issues
+
+Since the SQLite3 gem has undergone major changes with `sqlite3 >= 2.1`, update any direct calls to its API.
+
+#### Review and Update SQLite Database Initialization
+**OLD Code (deprecated):**
+```ruby
+db = SQLite3::Database.open("db/development.sqlite3")
+```
+
+**NEW Code:**
+```ruby
+db = SQLite3::Database.new("db/development.sqlite3")
+```
+
+Additionally, SQLite now handles exceptions differently, so replace any outdated error-handling patterns accordingly. For detailed information, refer to the [SQLite3 changelog](https://github.com/sparklemotion/sqlite3-ruby/blob/master/CHANGELOG.md).
+
+---
+
+### FIX 3: Validate Post Upgrade Compatibility with Rails 8
+
+The latest `tailwindcss-rails` (v4.4.0) explicitly supports Rails 8.1, and `jbuilder` (v2.14.1) dropped support for Rails < 7.0. If your app uses unsupported Rails versions or older dependencies, you may face issues.
+
+#### Check Minimum Rails Version
+Ensure your `Gemfile` specifies Rails 7.0 or later:
+**Path:** `Gemfile`  
+**Code:**
+```ruby
+gem 'rails', '=> 8.1.2'
+gem 'sqlite3', '~> 2.1'
+```
+
+Run `bundle update rails sqlite3` to upgrade these packages and any related dependencies.
+
+#### Update Tests for Jbuilder Compatibility
+If tests are failing due to updated `jbuilder` syntax (e.g., use of `params.expect` instead of `params.require` or API-related view changes), update the code accordingly. Example:
+
+**OLD Code:**
+```ruby
+json.attributes! @post
+```
+
+**NEW Code:**
+```ruby
+json.merge!(@post.as_json)
+```
+
+---
+
+### FIX 4: Ensure Styles Directories Exist
+Some projects use non-standard directories for organizing stylesheets. The build error mentions `app/assets/tailwind`, which doesn't exist. Update Tailwind configuration or create the folder:
+
+#### Create the Folder
+**Command:**
+```bash
+mkdir -p app/assets/tailwind
+```
+
+#### OR Update TailwindCSS Input Path
+Edit the `tailwind.config.js` file and point it to the appropriate input path:
+
+**Path:** `tailwind.config.js`  
+**Code:**
+```javascript
+module.exports = {
+  content: [
+    './app/assets/stylesheets/**/*.{html,js,erb}',
+    './app/views/**/*.{html,erb}'
+  ],
+};
+```
+Ensure the specified path matches your actual styles directory.
+
+---
+
+### FIX 5: Database Migration Issues
+Run the following to ensure schema migrations are applied correctly (if still failing):
+
+**Command:**
+```bash
+rails db:drop db:create db:migrate
+```
+
+---
+
+Run your test suite again to confirm these fixes resolve the remaining errors. Let me know if any specific errors persist!
