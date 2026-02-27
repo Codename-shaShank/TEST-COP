@@ -1,13 +1,8 @@
-class CreateLinks < ActiveRecord::Migration[7.0]
+class AddColumnsToLinks < ActiveRecord::Migration[7.0]
   def change
-    create_table :links do |t|
-      t.string :url
-      t.string :title
-      t.string :description
-      t.string :image
-      t.integer :views_count
-
-      t.timestamps
-    end
+    add_column :links, :title, :string, if_not_exists: true
+    add_column :links, :description, :string, if_not_exists: true
+    add_column :links, :image, :string, if_not_exists: true
+    add_column :links, :views_count, :integer, default: 0, if_not_exists: true
   end
 end

@@ -1,4 +1,11 @@
 <%= form_with model: link, data: {controller: "reset-form", action: "turbo:submit-end->reset-form#reset"} do |form| %>
+  <% if link.errors.any? %>
+    <div id="error_explanation">
+      <% link.errors.full_messages.each do |message| %>
+        <p class="text-red-600 text-sm"><%= message %></p>
+      <% end %>
+    </div>
+  <% end %>
   <div class="flex gap-2 items-center">
     <%= form.url_field :url, required: true, autofocus: true, placeholder: "http://example.com", class: "flex-grow rounded" %>
     <%= form.button class: "px-3 py-2 bg-gray-100 rounded" %>
