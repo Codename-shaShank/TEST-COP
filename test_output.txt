@@ -1,88 +1,27 @@
 [3m[1m[34m≈[39m[22m[23m tailwindcss [34mv4.2.0[39m
 
-Specified input file [2m[34m`[39m[22m[34m./app/assets/tailwind/application.css[39m[2m[34m`[39m[22m does not exist.
-bin/rails aborted!
-Command failed with exit 1: /home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/tailwindcss-ruby-4.2.0-x86_64-linux-gnu/exe/x86_64-linux-gnu/tailwindcss
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/tailwindcss-rails-4.4.0/lib/tasks/build.rake:11:in `system'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/tailwindcss-rails-4.4.0/lib/tasks/build.rake:11:in `block (2 levels) in <main>'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/rake-13.3.1/lib/rake/task.rb:281:in `block in execute'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/rake-13.3.1/lib/rake/task.rb:281:in `each'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/rake-13.3.1/lib/rake/task.rb:281:in `execute'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/rake-13.3.1/lib/rake/task.rb:219:in `block in invoke_with_call_chain'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/rake-13.3.1/lib/rake/task.rb:199:in `synchronize'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/rake-13.3.1/lib/rake/task.rb:199:in `invoke_with_call_chain'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/rake-13.3.1/lib/rake/task.rb:243:in `block in invoke_prerequisites'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/rake-13.3.1/lib/rake/task.rb:241:in `each'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/rake-13.3.1/lib/rake/task.rb:241:in `invoke_prerequisites'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/rake-13.3.1/lib/rake/task.rb:218:in `block in invoke_with_call_chain'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/rake-13.3.1/lib/rake/task.rb:199:in `synchronize'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/rake-13.3.1/lib/rake/task.rb:199:in `invoke_with_call_chain'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/rake-13.3.1/lib/rake/task.rb:188:in `invoke'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/rake-13.3.1/lib/rake/application.rb:188:in `invoke_task'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/rake-13.3.1/lib/rake/application.rb:138:in `block (2 levels) in top_level'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/rake-13.3.1/lib/rake/application.rb:138:in `each'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/rake-13.3.1/lib/rake/application.rb:138:in `block in top_level'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/rake-13.3.1/lib/rake/application.rb:147:in `run_with_threads'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/rake-13.3.1/lib/rake/application.rb:132:in `top_level'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/railties-8.1.2/lib/rails/commands/rake/rake_command.rb:27:in `block (2 levels) in perform'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/rake-13.3.1/lib/rake/application.rb:214:in `standard_exception_handling'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/railties-8.1.2/lib/rails/commands/rake/rake_command.rb:27:in `block in perform'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/railties-8.1.2/lib/rails/commands/rake/rake_command.rb:44:in `block in with_rake'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/rake-13.3.1/lib/rake/rake_module.rb:59:in `with_application'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/railties-8.1.2/lib/rails/commands/rake/rake_command.rb:41:in `with_rake'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/railties-8.1.2/lib/rails/commands/rake/rake_command.rb:20:in `perform'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/railties-8.1.2/lib/rails/command.rb:150:in `invoke_rake'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/railties-8.1.2/lib/rails/command.rb:67:in `block in invoke'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/railties-8.1.2/lib/rails/command.rb:143:in `with_argv'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/railties-8.1.2/lib/rails/command.rb:63:in `invoke'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/railties-8.1.2/lib/rails/commands.rb:18:in `<main>'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/bootsnap-1.18.3/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb:30:in `require'
-Tasks: TOP => test:prepare => tailwindcss:build
-(See full trace by running task with --trace)
+Done in [34m56ms[39m
 [3m[1m[34m≈[39m[22m[23m tailwindcss [34mv4.2.0[39m
 
-Specified input file [2m[34m`[39m[22m[34m./app/assets/tailwind/application.css[39m[2m[34m`[39m[22m does not exist.
-bin/rails aborted!
-Command failed with exit 1: /home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/tailwindcss-ruby-4.2.0-x86_64-linux-gnu/exe/x86_64-linux-gnu/tailwindcss
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/tailwindcss-rails-4.4.0/lib/tasks/build.rake:11:in `system'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/tailwindcss-rails-4.4.0/lib/tasks/build.rake:11:in `block (2 levels) in <main>'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/rake-13.3.1/lib/rake/task.rb:281:in `block in execute'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/rake-13.3.1/lib/rake/task.rb:281:in `each'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/rake-13.3.1/lib/rake/task.rb:281:in `execute'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/rake-13.3.1/lib/rake/task.rb:219:in `block in invoke_with_call_chain'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/rake-13.3.1/lib/rake/task.rb:199:in `synchronize'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/rake-13.3.1/lib/rake/task.rb:199:in `invoke_with_call_chain'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/rake-13.3.1/lib/rake/task.rb:243:in `block in invoke_prerequisites'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/rake-13.3.1/lib/rake/task.rb:241:in `each'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/rake-13.3.1/lib/rake/task.rb:241:in `invoke_prerequisites'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/rake-13.3.1/lib/rake/task.rb:218:in `block in invoke_with_call_chain'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/rake-13.3.1/lib/rake/task.rb:199:in `synchronize'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/rake-13.3.1/lib/rake/task.rb:199:in `invoke_with_call_chain'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/rake-13.3.1/lib/rake/task.rb:188:in `invoke'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/rake-13.3.1/lib/rake/application.rb:188:in `invoke_task'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/rake-13.3.1/lib/rake/application.rb:138:in `block (2 levels) in top_level'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/rake-13.3.1/lib/rake/application.rb:138:in `each'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/rake-13.3.1/lib/rake/application.rb:138:in `block in top_level'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/rake-13.3.1/lib/rake/application.rb:147:in `run_with_threads'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/rake-13.3.1/lib/rake/application.rb:132:in `top_level'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/railties-8.1.2/lib/rails/commands/rake/rake_command.rb:27:in `block (2 levels) in perform'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/rake-13.3.1/lib/rake/application.rb:214:in `standard_exception_handling'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/railties-8.1.2/lib/rails/commands/rake/rake_command.rb:27:in `block in perform'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/railties-8.1.2/lib/rails/commands/rake/rake_command.rb:44:in `block in with_rake'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/rake-13.3.1/lib/rake/rake_module.rb:59:in `with_application'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/railties-8.1.2/lib/rails/commands/rake/rake_command.rb:41:in `with_rake'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/railties-8.1.2/lib/rails/commands/rake/rake_command.rb:20:in `perform'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/railties-8.1.2/lib/rails/commands/test/test_command.rb:73:in `run_prepare_task'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/railties-8.1.2/lib/rails/commands/test/test_command.rb:32:in `perform'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/thor-1.5.0/lib/thor/command.rb:28:in `run'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/thor-1.5.0/lib/thor/invocation.rb:127:in `invoke_command'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/railties-8.1.2/lib/rails/command/base.rb:176:in `invoke_command'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/thor-1.5.0/lib/thor.rb:538:in `dispatch'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/railties-8.1.2/lib/rails/command/base.rb:71:in `perform'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/railties-8.1.2/lib/rails/command.rb:65:in `block in invoke'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/railties-8.1.2/lib/rails/command.rb:143:in `with_argv'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/railties-8.1.2/lib/rails/command.rb:63:in `invoke'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/railties-8.1.2/lib/rails/commands.rb:18:in `<main>'
-/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/bootsnap-1.18.3/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb:30:in `require'
-Tasks: TOP => test:prepare => tailwindcss:build
-(See full trace by running task with --trace)
+Done in [34m50ms[39m
+DEPRECATION WARNING: resource received a hash argument only. Please use a keyword instead. Support to hash argument will be removed in Rails 8.2. (called from block in <main> at /home/runner/work/TEST-COP/TEST-COP/config/routes.rb:2)
+DEPRECATION WARNING: resource received a hash argument path. Please use a keyword instead. Support to hash argument will be removed in Rails 8.2. (called from block in <main> at /home/runner/work/TEST-COP/TEST-COP/config/routes.rb:2)
+DEPRECATION WARNING: resource received a hash argument path_names. Please use a keyword instead. Support to hash argument will be removed in Rails 8.2. (called from block in <main> at /home/runner/work/TEST-COP/TEST-COP/config/routes.rb:2)
+DEPRECATION WARNING: resource received a hash argument controller. Please use a keyword instead. Support to hash argument will be removed in Rails 8.2. (called from block in <main> at /home/runner/work/TEST-COP/TEST-COP/config/routes.rb:2)
+Running 12 tests in a single process (parallelization threshold is 50)
+Run options: --seed 28797
+
+# Running:
+
+...F
+
+Failure:
+LinksTest#test_cannot_create_link_without_url [test/integration/links_test.rb:6]:
+Expected response to be a <422: unprocessable_entity>, but was a <500: Internal Server Error>
+
+bin/rails test test/integration/links_test.rb:4
+
+........
+
+Finished in 0.921133s, 13.0274 runs/s, 19.5411 assertions/s.
+12 runs, 18 assertions, 1 failures, 0 errors, 0 skips
