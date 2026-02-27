@@ -16,52 +16,33 @@ import os
 import sys
 
 def parse_fixes(content):
-    """Try multiple regex patterns to find file fixes in AI output."""
-    all_matches = []
+    """Parse AI output for explicit FIX blocks only.
 
-    # Pattern 1: Standard FIX_FILE format
-    pattern1 = r'FIX_FILE:\s*(.+?)\n\s*```\w*\n(.*?)```'
-    matches = re.findall(pattern1, content, re.DOTALL)
-    for filepath, file_content in matches:
-        all_matches.append((filepath.strip(), file_content.rstrip()))
+    Accepted formats:
 
-    if all_matches:
-        return all_matches
+      ### FIX: path/to/file.rb
+      ```ruby
+      # full file content
+      ```
 
-    # Pattern 2: ### FIX: path/to/file format (new format)
-    pattern2 = r'###\s*FIX:\s*(.+?)\n\s*```\w*\n(.*?)```'
-    matches = re.findall(pattern2, content, re.DOTALL)
-    for filepath, file_content in matches:
-        all_matches.append((filepath.strip(), file_content.rstrip()))
+      FIX_FILE: path/to/file.rb
+      ```ruby
+      # full file content
+      ```
+    """
+    matches = []
 
-    if all_matches:
-        return all_matches
+    # Format 1: ### FIX: path/to/file
+    pattern_fix = r'###\s*FIX:\s*([^\n]+)\n\s*```[\w-]*\n(.*?)```'
+    for filepath, file_content in re.findall(pattern_fix, content, re.DOTALL):
+        matches.append((filepath.strip(), file_content.rstrip()))
 
-    # Pattern 3: FIX_FILE with language on same line as backticks
-    pattern3 = r'FIX_FILE:\s*(.+?)\n\s*```(\w+)\n(.*?)```'
-    matches = re.findall(pattern3, content, re.DOTALL)
-    for filepath, lang, file_content in matches:
-        all_matches.append((filepath.strip(), file_content.rstrip()))
+    # Format 2: FIX_FILE: path/to/file
+    pattern_fix_file = r'FIX_FILE:\s*([^\n]+)\n\s*```[\w-]*\n(.*?)```'
+    for filepath, file_content in re.findall(pattern_fix_file, content, re.DOTALL):
+        matches.append((filepath.strip(), file_content.rstrip()))
 
-    if all_matches:
-        return all_matches
-
-    # Pattern 4: **filename** or `filename` followed by code block
-    pattern4 = r'(?:\*\*|`)([a-zA-Z0-9_/.-]+\.\w+)(?:\*\*|`)\s*(?::|)\s*\n\s*```\w*\n(.*?)```'
-    matches = re.findall(pattern4, content, re.DOTALL)
-    for filepath, file_content in matches:
-        all_matches.append((filepath.strip(), file_content.rstrip()))
-
-    if all_matches:
-        return all_matches
-
-    # Pattern 5: Look for file paths followed by code blocks more loosely
-    pattern5 = r'(?:^|\n)\s*([a-zA-Z0-9_/.-]+(?:\.rb|\.yml|\.yaml|\.gemspec|Gemfile))\s*(?::|)\s*\n\s*```\w*\n(.*?)```'
-    matches = re.findall(pattern5, content, re.DOTALL)
-    for filepath, file_content in matches:
-        all_matches.append((filepath.strip(), file_content.rstrip()))
-
-    return all_matches
+    return matches
 
 
 def main():
