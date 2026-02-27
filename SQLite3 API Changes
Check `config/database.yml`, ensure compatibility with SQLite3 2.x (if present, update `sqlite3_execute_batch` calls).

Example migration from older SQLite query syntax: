@@ -1,0 +1,5 @@
+# Old SQLite INSERT query usage:
+ActiveRecord::Base.connection.execute("INSERT INTO ...")
+
+# Should now be:
+ActiveRecord::Base.connection.execute_batch("INSERT INTO ...")

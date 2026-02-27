@@ -1,23 +1,106 @@
-Error: unexpected response from the server: 403 Forbidden
-{"error":{"code":"no_access","message":"No access to model: openai/gpt-4o","details":"No access to model: openai/gpt-4o"}}
+### FIX: `app/assets/stylesheets/application.tailwind.css`
+Create a file for Tailwind CSS directives:
 
+```css
+/* Tailwind base styles */
+@import "tailwindcss/base";
+/* Tailwind components */
+@import "tailwindcss/components";
+/* Tailwind utility classes */
+@import "tailwindcss/utilities";
+```
 
-Usage:
-  gh models run [model] [prompt] [flags]
+---
 
-Examples:
-gh models run openai/gpt-4o-mini "how many types of hyena are there?"
-gh models run --org my-org openai/gpt-4o-mini "how many types of hyena are there?"
-gh models run --file prompt.yml --var name=Alice --var topic="machine learning"
+### FIX: `config/initializers/assets.rb`
+Enable precompilation for the new Tailwind CSS file:
 
+```ruby
+# Precompile Tailwind CSS file
+Rails.application.config.assets.precompile += %w[application.tailwind.css]
+```
 
-Flags:
-      --file string            Path to a .prompt.yml file.
-  -h, --help                   help for run
-      --max-tokens string      Limit the maximum tokens for the model response.
-      --org string             Organization to attribute usage to (omitting will attribute usage to the current actor
-      --system-prompt string   Prompt the system.
-      --temperature string     Controls randomness in the response, use lower to be more deterministic.
-      --top-p string           Controls text diversity by selecting the most probable words until a set probability is reached.
-      --var stringArray        Template variables for prompt files (can be used multiple times: --var name=value)
+---
 
+### FIX: Regenerate Tailwind Config
+Run the following to ensure correct setup of Tailwind configuration:
+
+```bash
+rails tailwindcss:install
+```
+
+This ensures the existence of `tailwind.config.js`, which Tailwind needs.
+
+---
+
+### FIX: `app/assets/config/manifest.js`
+If Tailwind was previously misconfigured, ensure the manifest references the newly added Tailwind file:
+
+```javascript
+//= link application.tailwind.css
+```
+
+---
+
+### FIX: SQLite3 API Changes
+Check `config/database.yml`, ensure compatibility with SQLite3 2.x (if present, update `sqlite3_execute_batch` calls).
+
+Example migration from older SQLite query syntax:
+```ruby
+# Old SQLite INSERT query usage:
+ActiveRecord::Base.connection.execute("INSERT INTO ...")
+
+# Should now be:
+ActiveRecord::Base.connection.execute_batch("INSERT INTO ...")
+```
+
+Update query statements or syntax as needed per [SQLite3 2.x documentation](https://github.com/sparklemotion/sqlite3-ruby/blob/master/CHANGELOG.md).
+
+---
+
+### FIX: Update Gemfile Dependencies
+Ensure your `Gemfile` adheres to the new dependencies for Rails 8.1. For instance:
+
+```ruby
+gem 'jbuilder', '>= 2.14'
+gem 'sqlite3', '~> 2.9'
+gem 'tailwindcss-rails', '~> 4.4'
+```
+
+Then run:
+```bash
+bundle update
+```
+
+---
+
+### FIX: Check Ruby/Rails Compatibility
+Ensure your app uses Ruby 3.0+ and Rails 7.0+ (required by Jbuilder and Tailwind CSS). Update `Gemfile` if needed:
+```ruby
+ruby '3.2.0' # Or newer
+gem 'rails', '~> 8.1'
+```
+
+Run:
+```bash
+bundle install
+```
+
+---
+
+### FIX: Clear Cache and Rebuild
+To avoid residual issues:
+```bash
+rails assets:clobber 
+rails assets:precompile
+```
+
+---
+
+### Summary:
+1. **Tailwind setup:** File structure (`application.tailwind.css`), asset precompilation (`config/initializers/assets.rb`), and Tailwind config (`rails tailwindcss:install`).
+2. **SQLite3 compliance:** Check `database.yml`, ensure query compatibility with newer APIs.
+3. **Dependency updates**: Confirm Ruby, Rails, and Gemfile compatibility.
+4. **Cache clearing:** Rebuild assets.
+
+These steps should resolve the errors and allow successful test runs.
