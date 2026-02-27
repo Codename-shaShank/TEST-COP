@@ -1,27 +1,64 @@
 [3m[1m[34m≈[39m[22m[23m tailwindcss [34mv4.2.0[39m
 
-Done in [32m49ms[39m
+Done in [34m54ms[39m
 [3m[1m[34m≈[39m[22m[23m tailwindcss [34mv4.2.0[39m
 
-Done in [34m52ms[39m
-DEPRECATION WARNING: resource received a hash argument only. Please use a keyword instead. Support to hash argument will be removed in Rails 8.2. (called from block in <main> at /home/runner/work/TEST-COP/TEST-COP/config/routes.rb:2)
-DEPRECATION WARNING: resource received a hash argument path. Please use a keyword instead. Support to hash argument will be removed in Rails 8.2. (called from block in <main> at /home/runner/work/TEST-COP/TEST-COP/config/routes.rb:2)
-DEPRECATION WARNING: resource received a hash argument path_names. Please use a keyword instead. Support to hash argument will be removed in Rails 8.2. (called from block in <main> at /home/runner/work/TEST-COP/TEST-COP/config/routes.rb:2)
-DEPRECATION WARNING: resource received a hash argument controller. Please use a keyword instead. Support to hash argument will be removed in Rails 8.2. (called from block in <main> at /home/runner/work/TEST-COP/TEST-COP/config/routes.rb:2)
-Running 12 tests in a single process (parallelization threshold is 50)
-Run options: --seed 65525
+Done in [34m55ms[39m
+/home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/activerecord-8.1.2/lib/active_record/migration.rb:1569:in `validate':  (ActiveRecord::DuplicateMigrationNameError)
 
-# Running:
+Multiple migrations have the name CreateLinks.
 
-.F
 
-Failure:
-LinksTest#test_cannot_create_link_without_url [test/integration/links_test.rb:6]:
-Expected response to be a <422: unprocessable_entity>, but was a <500: Internal Server Error>
-
-bin/rails test test/integration/links_test.rb:4
-
-..........
-
-Finished in 0.397557s, 30.1843 runs/s, 45.2765 assertions/s.
-12 runs, 18 assertions, 1 failures, 0 errors, 0 skips
+	from /home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/activerecord-8.1.2/lib/active_record/migration.rb:1438:in `initialize'
+	from /home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/activerecord-8.1.2/lib/active_record/migration.rb:1288:in `new'
+	from /home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/activerecord-8.1.2/lib/active_record/migration.rb:1288:in `open'
+	from /home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/activerecord-8.1.2/lib/active_record/migration.rb:763:in `block (2 levels) in pending_migrations'
+	from /home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/activerecord-8.1.2/lib/active_record/migration/pending_migration_connection.rb:8:in `with_temporary_pool'
+	from /home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/activerecord-8.1.2/lib/active_record/migration.rb:762:in `block in pending_migrations'
+	from /home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/activerecord-8.1.2/lib/active_record/migration.rb:761:in `each'
+	from /home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/activerecord-8.1.2/lib/active_record/migration.rb:761:in `pending_migrations'
+	from /home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/activerecord-8.1.2/lib/active_record/migration.rb:740:in `check_pending_migrations'
+	from /home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/activerecord-8.1.2/lib/active_record/migration.rb:714:in `load_schema_if_pending!'
+	from /home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/activerecord-8.1.2/lib/active_record/migration.rb:719:in `block in maintain_test_schema!'
+	from /home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/activerecord-8.1.2/lib/active_record/migration.rb:1036:in `suppress_messages'
+	from /home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/activerecord-8.1.2/lib/active_record/migration.rb:724:in `method_missing'
+	from /home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/activerecord-8.1.2/lib/active_record/migration.rb:719:in `maintain_test_schema!'
+	from /home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/railties-8.1.2/lib/rails/testing/maintain_test_schema.rb:5:in `<main>'
+	from <internal:/opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/rubygems/core_ext/kernel_require.rb>:38:in `require'
+	from <internal:/opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/rubygems/core_ext/kernel_require.rb>:38:in `require'
+	from /home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/bootsnap-1.18.3/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb:30:in `require'
+	from /home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/zeitwerk-2.7.5/lib/zeitwerk/core_ext/kernel.rb:34:in `require'
+	from /home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/railties-8.1.2/lib/rails/test_help.rb:13:in `<main>'
+	from <internal:/opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/rubygems/core_ext/kernel_require.rb>:38:in `require'
+	from <internal:/opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/rubygems/core_ext/kernel_require.rb>:38:in `require'
+	from /home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/bootsnap-1.18.3/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb:30:in `require'
+	from /home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/zeitwerk-2.7.5/lib/zeitwerk/core_ext/kernel.rb:34:in `require'
+	from /home/runner/work/TEST-COP/TEST-COP/test/test_helper.rb:3:in `<main>'
+	from <internal:/opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/rubygems/core_ext/kernel_require.rb>:38:in `require'
+	from <internal:/opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/rubygems/core_ext/kernel_require.rb>:38:in `require'
+	from /home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/bootsnap-1.18.3/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb:30:in `require'
+	from /home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/zeitwerk-2.7.5/lib/zeitwerk/core_ext/kernel.rb:34:in `require'
+	from /home/runner/work/TEST-COP/TEST-COP/test/channels/application_cable/connection_test.rb:1:in `<main>'
+	from <internal:/opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/rubygems/core_ext/kernel_require.rb>:38:in `require'
+	from <internal:/opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/rubygems/core_ext/kernel_require.rb>:38:in `require'
+	from /home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/bootsnap-1.18.3/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb:30:in `require'
+	from /home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/zeitwerk-2.7.5/lib/zeitwerk/core_ext/kernel.rb:34:in `require'
+	from /home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/railties-8.1.2/lib/rails/test_unit/runner.rb:71:in `block in load_tests'
+	from /home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/railties-8.1.2/lib/rails/test_unit/runner.rb:69:in `each'
+	from /home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/railties-8.1.2/lib/rails/test_unit/runner.rb:69:in `load_tests'
+	from /home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/railties-8.1.2/lib/minitest/rails_plugin.rb:147:in `block in plugin_rails_options'
+	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/optparse.rb:1715:in `block in parse_in_order'
+	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/optparse.rb:913:in `search'
+	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/optparse.rb:1823:in `block in visit'
+	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/optparse.rb:1822:in `reverse_each'
+	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/optparse.rb:1822:in `visit'
+	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/optparse.rb:1715:in `parse_in_order'
+	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/optparse.rb:1630:in `order!'
+	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/optparse.rb:1739:in `permute!'
+	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/optparse.rb:1764:in `parse!'
+	from /home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/minitest-6.0.2/lib/minitest.rb:254:in `block in process_args'
+	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/optparse.rb:1153:in `initialize'
+	from /home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/minitest-6.0.2/lib/minitest.rb:160:in `new'
+	from /home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/minitest-6.0.2/lib/minitest.rb:160:in `process_args'
+	from /home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/minitest-6.0.2/lib/minitest.rb:300:in `run'
+	from /home/runner/work/TEST-COP/TEST-COP/vendor/bundle/ruby/3.2.0/gems/minitest-6.0.2/lib/minitest.rb:84:in `block in autorun'
