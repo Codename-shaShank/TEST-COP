@@ -1,19 +1,15 @@
 [3m[1m[34m≈[39m[22m[23m tailwindcss [34mv4.2.0[39m
 
-Done in [34m51ms[39m
+Done in [34m63ms[39m
 [3m[1m[34m≈[39m[22m[23m tailwindcss [34mv4.2.0[39m
 
-Done in [32m47ms[39m
-Running 12 tests in a single process (parallelization threshold is 50)
-Run options: --seed 50625
+Done in [34m53ms[39m
+Running 9 tests in a single process (parallelization threshold is 50)
+Run options: --seed 62877
 
 # Running:
 
-........DEPRECATION WARNING: resource received a hash argument only. Please use a keyword instead. Support to hash argument will be removed in Rails 8.2. (called from block in <main> at /home/runner/work/TEST-COP/TEST-COP/config/routes.rb:2)
-DEPRECATION WARNING: resource received a hash argument path. Please use a keyword instead. Support to hash argument will be removed in Rails 8.2. (called from block in <main> at /home/runner/work/TEST-COP/TEST-COP/config/routes.rb:2)
-DEPRECATION WARNING: resource received a hash argument path_names. Please use a keyword instead. Support to hash argument will be removed in Rails 8.2. (called from block in <main> at /home/runner/work/TEST-COP/TEST-COP/config/routes.rb:2)
-DEPRECATION WARNING: resource received a hash argument controller. Please use a keyword instead. Support to hash argument will be removed in Rails 8.2. (called from block in <main> at /home/runner/work/TEST-COP/TEST-COP/config/routes.rb:2)
-...F
+F
 
 Failure:
 LinksTest#test_cannot_create_link_without_url [test/integration/links_test.rb:6]:
@@ -21,7 +17,7 @@ Expected response to be a <422: unprocessable_entity>, but was a <500: Internal 
 
 bin/rails test test/integration/links_test.rb:4
 
+........
 
-
-Finished in 0.971704s, 12.3494 runs/s, 18.5242 assertions/s.
-12 runs, 18 assertions, 1 failures, 0 errors, 0 skips
+Finished in 0.294882s, 30.5207 runs/s, 30.5207 assertions/s.
+9 runs, 9 assertions, 1 failures, 0 errors, 0 skips

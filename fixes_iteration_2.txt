@@ -1,9 +1,30 @@
-### FIX: config/routes.rb
+### FIX: app/models/link.rb
 ```ruby
-Rails.application.routes.draw do
-  # Updated to use keyword arguments instead of hash arguments to remove deprecation warnings
-  resources :links, path: 'links', path_names: { new: 'new', edit: 'edit' }, controller: 'links'
+class Link < ApplicationRecord
+  validates :url, presence: true
 end
+```
+
+### FIX: db/schema.rb
+```ruby
+ActiveRecord::Schema.define(version: 2023_10_27_000001) do
+
+  create_table "links", force: :cascade do |t|
+    t.string "url", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+end
+```
+
+### FIX: test/fixtures/links.yml
+```yaml
+one:
+  url: "https://example.com"
+
+two:
+  url: "https://anotherexample.com"
 ```
 
 ### FIX: test/integration/links_test.rb
@@ -12,19 +33,26 @@ require "test_helper"
 
 class LinksTest < ActionDispatch::IntegrationTest
   test "cannot create link without url" do
-    assert_no_difference 'Link.count' do
-      post links_path, params: { link: { url: nil } }
+    # Check initial state
+    assert_difference "Link.count", 0 do
+      post links_path, params: { link: { url: "" } }
     end
+
     assert_response :unprocessable_entity
+    assert_match /can't be blank/, response.body
   end
 end
 ```
 
-### FIX: app/models/link.rb
+### FIX: db/migrate/20231027000001_create_links.rb
 ```ruby
-class Link < ApplicationRecord
-  validates :url, presence: true
+class CreateLinks < ActiveRecord::Migration[6.1]
+  def change
+    create_table :links do |t|
+      t.string :url, null: false
+
+      t.timestamps
+    end
+  end
 end
 ```
-
-NO_FIX_NEEDED
