@@ -288,7 +288,7 @@ jobs:
         id: fix_iteration_1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          MODEL_NAME: gpt-4o
+          MODEL_NAME: openai/gpt-4o
         run: |
           echo "Iteration 1: Analyzing failures and generating fixes..."
 
@@ -465,7 +465,7 @@ jobs:
         id: fix_iteration_2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          MODEL_NAME: gpt-4o
+          MODEL_NAME: openai/gpt-4o
         run: |
           echo "Iteration 2: Analyzing remaining failures..."
           
@@ -544,7 +544,7 @@ jobs:
         id: fix_iteration_3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          MODEL_NAME: gpt-4o
+          MODEL_NAME: openai/gpt-4o
         run: |
           echo "Iteration 3: Final fix attempt..."
           
