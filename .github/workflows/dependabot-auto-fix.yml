@@ -427,6 +427,17 @@ jobs:
       - name: Commit and push iteration 1
         if: steps.apply_fixes_1.outputs.fixes_applied == 'true'
         run: |
+          # Sync with remote before making changes
+          git fetch origin
+          git reset --hard origin/$(git branch --show-current)
+          
+          # Re-apply fixes after reset
+          python3 .github/scripts/apply_fixes.py fixes_iteration_1.txt
+          
+          if git diff --name-only | grep -q 'Gemfile'; then
+            bundle install --jobs 4
+          fi
+          
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           COMMIT_MSG=$(grep "COMMIT_MESSAGE:" fixes_iteration_1.txt 2>/dev/null | head -1 | sed 's/COMMIT_MESSAGE: *//' | tr -d '\r')
@@ -445,8 +456,7 @@ jobs:
           fi
 
           git commit -m "$COMMIT_MSG"
-          git pull --rebase origin HEAD || true
-          git push origin HEAD
+          git push --force-with-lease origin HEAD
           
 
       - name: Test after iteration 1
@@ -536,6 +546,11 @@ jobs:
       - name: Apply fixes iteration 2
         if: steps.fix_iteration_2.outputs.fixes_generated == 'true'
         run: |
+          # Sync with remote before making changes
+          git fetch origin
+          git reset --hard origin/$(git branch --show-current)
+          
+          # Re-apply fixes after reset
           python3 .github/scripts/apply_fixes.py fixes_iteration_2.txt
 
           if git diff --name-only | grep -q 'Gemfile'; then
@@ -560,8 +575,7 @@ jobs:
             fi
 
             git commit -m "$COMMIT_MSG"
-            git pull --rebase origin HEAD || true
-            git push origin HEAD
+            git push --force-with-lease origin HEAD
           fi
 
       - name: Test after iteration 2
@@ -654,6 +668,11 @@ jobs:
       - name: Apply fixes iteration 3
         if: steps.fix_iteration_3.outputs.fixes_generated == 'true'
         run: |
+          # Sync with remote before making changes
+          git fetch origin
+          git reset --hard origin/$(git branch --show-current)
+          
+          # Re-apply fixes after reset
           python3 .github/scripts/apply_fixes.py fixes_iteration_3.txt
 
           if git diff --name-only | grep -q 'Gemfile'; then
@@ -678,8 +697,7 @@ jobs:
             fi
 
             git commit -m "$COMMIT_MSG"
-            git pull --rebase origin HEAD || true
-            git push origin HEAD
+            git push --force-with-lease origin HEAD
           fi
 
       - name: Final test
