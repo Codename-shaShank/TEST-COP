@@ -1,0 +1,466 @@
+## base64 (0.2.0 → 0.3.0)
+
+Changelog: https://github.com/ruby/base64/releases
+
+---
+
+## io-console (0.7.2 → 0.8.2)
+
+Changelog: https://github.com/ruby/io-console/releases
+
+---
+
+## jbuilder (2.11.5 → 2.14.1)
+
+### v2.14.1
+## What's Changed
+* Ensure that `Jbuilder.encode` properly forwards arguments to `.new` by @flavorjones in https://github.com/rails/jbuilder/pull/601
+
+## New Contributors
+* @flavorjones made their first contribution in https://github.com/rails/jbuilder/pull/601
+
+**Full Changelog**: https://github.com/rails/jbuilder/compare/v2.14.0...v2.14.1
+
+### v2.14.0
+## What's Changed
+* Drop support to Ruby < 3.0 and Rails < 7.0
+* Test against Rails 8 and fix Rails 7 logger dependency by @excid3 in https://github.com/rails/jbuilder/pull/582
+* Add status: :see_other to update action by @excid3 in https://github.com/rails/jbuilder/pull/583
+* Force close final statement in templates by @ienders in https://github.com/rails/jbuilder/pull/578
+* Optimize `_is_collection?` method by @moberegger in https://github.com/rails/jbuilder/pull/590
+* Add `#frozen_string_literal: true` to all files by @moberegger in https://github.com/rails/jbuilder/pull/599
+* Optimize `_key` to prevent string allocation when formatting `Symbol`s by @moberegger in https://github.com/rails/jbuilder/pull/593
+* Optimize key formatter by @moberegger in https://github.com/rails/jbuilder/pull/597
+* Optimize internal `extract!` calls to save on memory allocation by @moberegger in https://github.com/rails/jbuilder/pull/598
+* Fix regression in API controllers with view_cache_dependencies helper by @excid3 in https://github.com/rails/jbuilder/pull/575
+* Optimize `method_missing` via `alias_method` by @moberegger in https://github.com/rails/jbuilder/pull/600
+* Cleanup project for Rails 7+ support by @moberegger in https://github.com/rails/jbuilder/pull/594
+* Fix warnings and prevent Jbuilder::VERSION constant from being obliterated by @pixeltrix in https://github.com/rails/jbuilder/pull/574
+* Optimize memory allocation when rendering partials by @moberegger in https://github.com/rails/jbuilder/pull/591
+
+## New Contributors
+* @richardvenneman made their first contribution in https://github.com/rails/jbuilder/pull/576
+* @ienders made their first contribution in https://github.com/rails/jbuilder/pull/578
+* @moberegger made their first contribution in https://github.com/rails/jbuilder/pull/590
+
+**Full Changelog**: https://github.com/rails/jbuilder/compare/v2.13.0...v2.14.0
+
+### v2.13.0
+## What's Changed
+
+* Redirect to `@record` or path in controller generator by @jeromedalbert in https://github.com/rails/jbuilder/pull/569
+* Return early from collection partial rendering if blank by @tylerjc in https://github.com/rails/jbuilder/pull/560
+* Add missing ':see_other' status code in generated destroy controller method by @ldeld in https://github.com/rails/jbuilder/pull/538
+* Remove OpenStruct references from Jbuilder by @mtsmfm in https://github.com/rails/jbuilder/pull/567
+* Use new `params.expect` syntax instead of `params.require` by @jeromedalbert in https://github.com/rails/jbuilder/pull/573
+
+## New Contributors
+* @jeromedalbert made their first contribution in https://github.com/rails/jbuilder/pull/570
+* @tylerjc made their first contribution in https://github.com/rails/jbuilder/pull/560
+* @ldeld made their first contribution in https://github.com/rails/jbuilder/pull/538
+* @mtsmfm made their first contribution in https://github.com/rails/jbuilder/pull/567
+
+**Full Changelog**: https://github.com/rails/jbuilder/compare/v2.12.0...v2.13.0
+
+### v2.12.0
+## What's Changed
+
+* Use OpenStruct only if available by @yahonda in https://github.com/rails/jbuilder/pull/562
+* Replace deprecated `ProxyObject` with `BasicObject` by @Earlopain in https://github.com/rails/jbuilder/pull/563
+* Avoid loading `ActionController::API` constant by @nvasilevski in https://github.com/rails/jbuilder/pull/529
+* Fixed a bug where #501 broke compatibility with Enumerable by @yuki24 in https://github.com/rails/jbuilder/pull/531
+* Fix namespace issue when generating jbuilder views by @hahmed in https://github.com/rails/jbuilder/pull/536
+* Remove reliance on ERBTracker from rails by @HParker in https://github.com/rails/jbuilder/pull/504
+* Fix require path of dependency_tracker in railtie.rb by @jalyna in https://github.com/rails/jbuilder/pull/552
+
+## New Contributors
+* @nvasilevski made their first contribution in https://github.com/rails/jbuilder/pull/529
+* @okuramasafumi made their first contribution in https://github.com/rails/jbuilder/pull/526
+* @berkos made their first contribution in https://github.com/rails/jbuilder/pull/528
+* @hahmed made their first contribution in https://github.com/rails/jbuilder/pull/536
+* @casperisfine made their first contribution in https://github.com/rails/jbuilder/pull/550
+* @jalyna made their first contribution in https://github.com/rails/jbuilder/pull/552
+* @yahonda made their first contribution in https://github.com/rails/jbuilder/pull/562
+* @Earlopain made their first contribution in https://github.com/rails/jbuilder/pull/563
+* @stefannibrasil made their first contribution in https://github.com/rails/jbuilder/pull/539
+
+**Full Changelog**: https://github.com/rails/jbuilder/compare/v2.11.5...v2.12.0
+
+### v2.11.5
+## What's Changed
+
+* Make sure action_view is loaded before using it.
+
+**Full Changelog**: https://github.com/rails/jbuilder/compare/v2.11.4...v2.11.5
+
+---
+
+## psych (5.1.2 → 5.3.1)
+
+Changelog: https://github.com/ruby/psych/releases
+
+---
+
+## rdoc (6.6.2 → 7.2.0)
+
+Changelog: https://github.com/ruby/rdoc/releases
+
+---
+
+## reline (0.4.3 → 0.6.3)
+
+Changelog: https://github.com/ruby/reline/releases
+
+---
+
+## sqlite3 (1.7.3-x86_64-linux → 2.9.0-x86_64-linux-gnu)
+
+Changelog: https://github.com/sparklemotion/sqlite3-ruby/blob/master/CHANGELOG.md
+
+---
+
+## stringio (3.1.0 → 3.2.0)
+
+Changelog: https://github.com/ruby/stringio/releases/tag/v3.2.0
+
+---
+
+## tailwindcss-rails (2.3.0-x86_64-linux → 4.4.0)
+
+### v4.4.0
+## v4.4.0 / 2025-10-27
+
+### Changed
+
+* Removed the "poll" option on the watch command, since Tailwind v4 dropped support for this option (and it has been a no-op in this gem since.) #580 @flavorjones
+
+### Improved
+
+* Support Rails 8.1 scaffolding which disables system tests by default. #585 @flavorjones
+* Puma plugin now has experimental support for Rails engines. #567 @bopm
+* Puma plugin uses Puma 7's `after_stopped` callback, quashing a deprecation warning. #578 @rono23
+
+### New Contributors 🎉
+* @yahonda made their first contribution in https://github.com/rails/tailwindcss-rails/pull/569
+* @venarius made their first contribution in https://github.com/rails/tailwindcss-rails/pull/575
+* @rono23 made their first contribution in https://github.com/rails/tailwindcss-rails/pull/578
+* @thewatts made their first contribution in https://github.com/rails/tailwindcss-rails/pull/576
+
+**Full Changelog**: https://github.com/rails/tailwindcss-rails/compare/v4.3.0...v4.4.0
+
+### v4.3.0 / 2025-07-06
+## v4.3.0 / 2025-07-06
+
+### Improved
+
+* Experimental support for Rails engines. Feedback is welcome at #355. #554, #556 @bopm
+* Gracefully handle application created with `--skip-system-test`. #559, #562 @flavorjones
+
+
+### v4.3.0.rc2
+## v4.3.0.rc2
+
+### Improved
+
+* Experimental support for Rails engines. Feedback is welcome at #355. #554, #556 @bopm
+
+
+
+
+### v4.3.0.rc1
+## v4.3.0.rc1
+
+### Improved
+
+* Experimental support for Rails engines. Feedback is welcome at #355. #554 @bopm
+
+
+### v4.2.3 / 2025-05-02
+## v4.2.3 / 2025-05-02
+
+### Improved
+
+* The "tailwindcss:upgrade" task now pins to v4.1.4 of the `@tailwindcss/upgrade` tool. #544 @flavorjones
+
+
+### v3.3.2 / 2025-04-21
+## v3.3.2 / 2025-04-21
+
+* Quash the "caniuse-lite is outdated" warning message from the `tailwindcss` CLI. #536 @wlipa
+
+
+### v4.2.2 / 2025-04-05
+## v4.2.2 / 2025-04-05
+
+### Improved
+
+* The "tailwindcss:upgrade" task now uses the latest version of the `@tailwindcss/upgrade` tool. #529 @flavorjones
+* The "verbose" flag on Rails tasks now emits additional tailwind CLI debugging info (e.g., `bin/rails tailwindcss:build[verbose]`). #530 @flavorjones
+* Simplified the scaffold templates, removing unnecessary `div` tags. @523 @patriciomacadden
+
+
+
+
+### v4.2.1 / 2025-03-19
+## v4.2.1 / 2025-03-19
+
+### Fixed
+
+* Fix styles for form errors in some scaffold fields. #513 @patriciomacadden
+* Update scaffold system tests to handle the "Destroy" confirmation prompt when Turbo is enabled. Fixes #519. #520 @patriciomacadden @flavorjones
+
+
+
+
+### v4.2.0 / 2025-03-02
+## v4.2.0 / 2025-03-02
+
+### Features
+
+* Improve the view templates to display better on mobile devices. #503 @patriciomacadden
+* Support for environment variable `TAILWINDCSS_DEBUG` to turn off CSS minification. #504 @r-sierra
+
+
+
+
+### v4.1.0 / 2025-02-19
+## v4.1.0 / 2025-02-19
+
+### View template improvements
+
+* Field outlines are no longer hidden, and the focus border is brighter. #489 @rubys
+* Boolean fields are improved (checkbox labels aligned, "Yes"/"No" instead of "true"/"false"). #454 @patriciomacadden
+* Attachment links are consistently spaced and styled. #460 @patriciomacadden
+* Index page links to Show, Edit, and Destroy for each resource. #460 @patriciomacadden @flavorjones
+* Turbo confirm prompt added to Destroy links. #498 @patriciomacadden
+
+
+
+
+### v4.0.0 / 2025-02-01
+## v4.0.0 / 2025-02-01
+
+### Upgrade to Tailwind CSS v4
+
+General changes:
+
+- The dependency on `tailwindcss-ruby` is set to `~> 4.0`.
+- The location of (optional) `postcss.config.js` has moved from the `config/` directory to the app root.
+- The input file `app/assets/tailwind/application.tailwind.css` has been renamed to `app/assets/tailwind/application.css`.
+- If Propshaft is being used, `app/assets/tailwind` will be excluded from its asset handling.
+- The Inter font is no longer packaged with the gem.
+- Some Tailwind class names in the generated ERB templates are updated for v4.
+- The README is updated to contain verbose instructions on upgrading.
+
+Changes to the `tailwindcss:install` task:
+
+- The `tailwindcss:install` task no longer installs `config/tailwind.config.js`, as v4 recommends placing Tailwind configuration in the CSS file.
+- The Inter font is no longer configured in the application layout.
+- The "tailwind" stylesheet link tag will only be added to the application layout if Propshaft isn't in use and therefore already handling `app/assets/build/tailwind.css`. Previously it was always injected, resulting in the tag being rendered twice if Propshaft was in use.
+
+New task `tailwindcss:upgrade` upgrades many apps cleanly:
+
+- Cleans up `config/tailwind.config.js` and references it from the CSS file as recommended for v4 upgrades.
+- Runs the upstream upgrader (note: requires `npx` to run the one-time upgrade, but highly recommended).
+- Removes configuration for the Inter font from the application layout.
+- If present, moves `config/postcss.config.js` to the root directory.
+- The "tailwind" stylesheet link tag will be removed if Propshaft is in use and already handling `app/assets/build/tailwind.css`.
+- The input file `app/assets/tailwind/application.tailwind.css` will be moved to `app/assets/tailwind/application.css`.
+
+Thanks to @EricGusmao, @patriciomacadden, @excid3, and @brunoprietog for their feedback, contributions, and advice on v4 support.
+
+### Other changes
+
+- The gem's Rails generators are now hidden in the `rails g --help` output. #483 @patriciomacadden
+
+
+
+### v4.0.0.rc5 / 2025-01-29
+## v4.0.0.rc5 / 2025-01-29
+
+General changes since rc4:
+
+- Update the rake tasks to detect an (optional) postcss file in the root directory, after moving the file in #466. #482 @EricGusmao
+- Hide the gem's Rails generators in the `rails g --help` output. #483 @patriciomacadden
+
+
+### v4.0.0.rc4 / 2025-01-27
+## v4.0.0.rc4 / 2025-01-27
+
+Everything in v4.0.0.rc3 plus ...
+
+- The input file `app/assets/tailwind/application.tailwind.css` has been renamed to `app/assets/tailwind/application.css`.
+- Updated README docs on using the upgrade tool to update class names. @EricGusmao
+
+
+### v4.0.0.rc3 / 2025-01-27
+## v4.0.0.rc3 / 2025-01-27
+
+Everything in v4.0.0.rc2, plus ...
+
+General changes:
+
+- Remove the Inter font assets from the gem. @EricGusmao
+- If Propshaft is being used, `app/assets/tailwind` will be excluded from its asset handling. (This was incompletely fixed in RC2.)
+
+
+
+
+### v4.0.0.rc2 / 2025-01-26
+## v4.0.0.rc2 / 2025-01-26
+
+### Changes since [v4.0.0.rc1](https://github.com/rails/tailwindcss-rails/releases/tag/v4.0.0.rc1)
+
+General changes:
+
+- The location of `application.tailwind.css` has moved from `app/assets/stylesheets` to `app/assets/tailwind`. If Propshaft is being used, `app/assets/tailwind` will be excluded from its asset handling.
+
+Changes to the `tailwindcss:install` task:
+
+- The "tailwind" stylesheet link tag will only be added to the application layout if Propshaft isn't in use and already handling `app/assets/build/tailwind.css`. Previously it was always injected, resulting in the tag being rendered twice if Propshaft was in use.
+
+Changes to the `tailwindcss:upgrade` task:
+
+- The "tailwind" stylesheet link tag will be removed if Propshaft is in use and already handling `app/assets/build/tailwind.css`.
+- The file `application.tailwind.css` will be moved from `app/assets/stylesheets` to `app/assets/tailwind`.
+
+## Contributors
+* @EricGusmao made their first contribution in https://github.com/rails/tailwindcss-rails/pull/476
+* Thanks to @patriciomacadden for https://github.com/rails/tailwindcss-rails/pull/469
+
+
+### v4.0.0.rc1 / 2025-01-23
+## v4.0.0.rc1 / 2025-01-23
+
+### Upgrade to Tailwind CSS v4
+
+Upgrade guide is in [the README](https://github.com/rails/tailwindcss-rails/blob/main/README.md#upgrading-your-application-from-tailwind-v3-to-v4).
+
+General changes:
+
+- Dependency on `tailwindcss-ruby` set to `~> 4.0`.
+- The location of (optional) `postcss.config.js` has moved from the `config/` directory to the app root.
+
+Changes to the `tailwindcss:install` task:
+
+- The `tailwindcss:install` task no longer installs `config/tailwind.config.js`.
+- The Inter font is no longer packaged with the gem.
+- Some Tailwind class names are updated for v4.
+
+New task `tailwindcss:upgrade` upgrades many apps cleanly:
+
+- Cleans up some things in the generated `config/tailwind.config.js`.
+- Runs the upstream upgrader (note: requires `npx` to run the one-time upgrade, but highly recommended).
+- Removes references to the Inter font from the application layout.
+- If present, moves `config/postcss.config.js` to the root directory.
+
+Thanks to @EricGusmao and @excid3 for their help and advice on this work.
+
+
+
+
+### v3.3.1 / 2025-01-23
+## v3.3.1 / 2025-01-23
+
+* Pin the dependency on `tailwindcss-ruby` to `~> 3.0` to prevent users from upgrading Tailwind to v4 while still on v3 of this gem.
+
+  While it was useful during the Tailwind v4 beta period to allow users to float this dependency to try upgrading, we know (now that v4.0.0.rc1 of this gem is out) that not everything will work well if combining Tailwind v4 with `tailwindcss-rails` v3. Pinning this dependency should protect developers against unexpected issues.
+
+
+### v3.3.0 / 2025-01-19
+## v3.3.0 / 2025-01-19
+
+* Add support for using the puma plugin in a standalone puma process (outside of `rails server`). (#458) @flavorjones
+
+
+### v3.2.0 / 2025-01-10
+## v3.2.0 / 2025-01-10
+
+* Improve the scaffold views by making positions, padding, and sizes more consistent, add titles to all pages, add hover states and semantic colors to buttons and links, and change border and focus colors on fields with errors. (#452) @patriciomacadden
+
+## New Contributors
+* @patriciomacadden made their first contribution in https://github.com/rails/tailwindcss-rails/pull/452
+
+**Full Changelog**: https://github.com/rails/tailwindcss-rails/compare/v3.1.0...v3.2.0
+
+### v3.1.0 / 2024-12-29
+## v3.1.0 / 2024-12-29
+
+### Notable changes
+
+The tailwindcss plugins "form", "typography", and "container-queries" have been dropped from the default generated `tailwind.config.js` file. If you'd like to use them, you can re-add them to your project by uncommenting the appropriate lines in your config file. (#446) @flavorjones
+
+
+
+
+### v3.0.0 / 2024-10-15
+## v3.0.0
+
+### Notable changes
+
+* The upstream `tailwindcss` executable has been extracted from this gem into a new dependency, `tailwindcss-ruby`. @flavorjones
+
+  In advance of the upcoming TailwindCSS v4 release, we are decoupling the `tailwindcss` executable from the Rails integration. This will allow users to upgrade TailwindCSS at a time of their choosing, and allow early adopters to start using the beta releases.
+
+  See https://github.com/flavorjones/tailwindcss-ruby for more information.
+
+
+### v2.7.9 / 2024-10-10
+## v2.7.9 / 2024-10-10
+
+* Fix the scaffold form template to render text forms and check boxes properly in all versions of Rails. (#418) @Earlopain
+
+
+### v2.7.8 / 2024-10-08
+## v2.7.8 / 2024-10-08
+
+* Fix the scaffold form template to render checkboxes properly. (#416) @enderahmetyurt
+
+
+### v3.0.0.rc1
+## v3.0.0.rc1
+
+### Notable changes
+
+* The upstream `tailwindcss` executable has been extracted from this gem into a new dependency, `tailwindcss-ruby`. @flavorjones 
+
+  In advance of the upcoming TailwindCSS v4 release, we are decoupling the `tailwindcss` executable from the Rails integration. This will allow users to upgrade TailwindCSS at a time of their choosing, and allow early adopters to start using the beta releases.
+
+
+### v2.7.7 / 2024-10-02
+## v2.7.7 / 2024-10-02
+
+* Proactively support changes to Rails's authentication templates shipping in Rails 8.0.0.beta2 (which is not yet released). (#407, #408) @seanpdoyle @flavorjones
+
+
+### v2.7.6 / 2024-09-23
+## v2.7.6 / 2024-09-23
+
+* Update to [Tailwind CSS v3.4.13](https://github.com/tailwindlabs/tailwindcss/releases/tag/v3.4.13) @flavorjones
+
+
+### v2.7.5 / 2024-09-18
+## v2.7.5 / 2024-09-18
+
+* Update to [Tailwind CSS v3.4.12](https://github.com/tailwindlabs/tailwindcss/releases/tag/v3.4.12) @flavorjones
+
+
+### v2.7.4 / 2024-09-13
+## v2.7.4 / 2024-09-13
+
+* Update to [Tailwind CSS v3.4.11](https://github.com/tailwindlabs/tailwindcss/releases/tag/v3.4.11) @flavorjones
+
+
+### v2.7.3 / 2024-08-14
+## v2.7.3 / 2024-08-14
+
+* Update to [Tailwind CSS v3.4.10](https://github.com/tailwindlabs/tailwindcss/releases/tag/v3.4.10) @flavorjones
+
+
+### v2.7.2 / 2024-08-08
+## v2.7.2 / 2024-08-08
+
+* Update to [Tailwind CSS v3.4.9](https://github.com/tailwindlabs/tailwindcss/releases/tag/v3.4.9) @flavorjones
+
+
+---
