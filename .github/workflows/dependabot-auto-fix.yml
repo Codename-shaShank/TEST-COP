@@ -445,6 +445,7 @@ jobs:
           fi
 
           git commit -m "$COMMIT_MSG"
+          git pull --rebase origin HEAD || true
           git push origin HEAD
           
 
@@ -559,6 +560,7 @@ jobs:
             fi
 
             git commit -m "$COMMIT_MSG"
+            git pull --rebase origin HEAD || true
             git push origin HEAD
           fi
 
@@ -676,6 +678,7 @@ jobs:
             fi
 
             git commit -m "$COMMIT_MSG"
+            git pull --rebase origin HEAD || true
             git push origin HEAD
           fi
 
