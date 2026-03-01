@@ -1,23 +1,58 @@
-Error: unexpected response from the server: 403 Forbidden
-{"error":{"code":"no_access","message":"No access to model: openai/gpt-4o","details":"No access to model: openai/gpt-4o"}}
+### FIX: app/models/link.rb
+```ruby
+class Link < ApplicationRecord
+  validates :url, presence: true
+end
+```
 
+### FIX: db/schema.rb
+```ruby
+ActiveRecord::Schema.define(version: 2023_10_27_000001) do
 
-Usage:
-  gh models run [model] [prompt] [flags]
+  create_table "links", force: :cascade do |t|
+    t.string "url", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
 
-Examples:
-gh models run openai/gpt-4o-mini "how many types of hyena are there?"
-gh models run --org my-org openai/gpt-4o-mini "how many types of hyena are there?"
-gh models run --file prompt.yml --var name=Alice --var topic="machine learning"
+end
+```
 
+### FIX: test/fixtures/links.yml
+```yaml
+one:
+  url: "https://example.com"
 
-Flags:
-      --file string            Path to a .prompt.yml file.
-  -h, --help                   help for run
-      --max-tokens string      Limit the maximum tokens for the model response.
-      --org string             Organization to attribute usage to (omitting will attribute usage to the current actor
-      --system-prompt string   Prompt the system.
-      --temperature string     Controls randomness in the response, use lower to be more deterministic.
-      --top-p string           Controls text diversity by selecting the most probable words until a set probability is reached.
-      --var stringArray        Template variables for prompt files (can be used multiple times: --var name=value)
+two:
+  url: "https://anotherexample.com"
+```
 
+### FIX: test/integration/links_test.rb
+```ruby
+require "test_helper"
+
+class LinksTest < ActionDispatch::IntegrationTest
+  test "cannot create link without url" do
+    # Check initial state
+    assert_difference "Link.count", 0 do
+      post links_path, params: { link: { url: "" } }
+    end
+
+    assert_response :unprocessable_entity
+    assert_match /can't be blank/, response.body
+  end
+end
+```
+
+### FIX: db/migrate/20231027000001_create_links.rb
+```ruby
+class CreateLinks < ActiveRecord::Migration[6.1]
+  def change
+    create_table :links do |t|
+      t.string :url, null: false
+
+      t.timestamps
+    end
+  end
+end
+```

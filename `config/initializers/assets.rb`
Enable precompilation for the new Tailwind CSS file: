@@ -1,0 +1,2 @@
+# Precompile Tailwind CSS file
+Rails.application.config.assets.precompile += %w[application.tailwind.css]

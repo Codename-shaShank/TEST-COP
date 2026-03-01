@@ -262,6 +262,45 @@ jobs:
           fi
 
       # ============================================
+      # PRE-FLIGHT: Structural issue validation
+      # ============================================
+      - name: Check for duplicate migrations
+        id: check_migrations
+        continue-on-error: true
+        run: |
+          echo "🔍 Checking for duplicate migrations..."
+          
+          if [ -f .github/scripts/check_migrations.rb ]; then
+            ruby .github/scripts/check_migrations.rb
+            MIGRATION_FIX_EXIT=$?
+            
+            if [ $MIGRATION_FIX_EXIT -eq 1 ]; then
+              echo "✅ Duplicate migrations were detected and fixed"
+              echo "migrations_fixed=true" >> $GITHUB_OUTPUT
+              
+              # Commit the fixes
+              git config user.name "github-actions[bot]"
+              git config user.email "github-actions[bot]@users.noreply.github.com"
+              git add -A
+              
+              if ! git diff --cached --quiet; then
+                git commit -m "fix: resolve duplicate migration names detected by pre-flight check"
+                git push --force-with-lease origin HEAD 2>&1 || {
+                  echo "⚠️ Push failed, attempting to fetch and retry..."
+                  git fetch origin
+                  git rebase origin/$(git branch --show-current)
+                  git push --force-with-lease origin HEAD
+                }
+              fi
+            else
+              echo "migrations_fixed=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "⚠️ Migration check script not found"
+            echo "migrations_fixed=false" >> $GITHUB_OUTPUT
+          fi
+
+      # ============================================
       # Initial test run
       # ============================================
       - name: Run initial tests
@@ -718,8 +757,14 @@ jobs:
       - name: Summary
         if: always()
         run: |
-          echo "## Dependabot Auto-Fix Summary" >> $GITHUB_STEP_SUMMARY
+          echo "## 🤖 Dependabot Auto-Fix Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Check if migrations were fixed
+          if [ "${{ steps.check_migrations.outputs.migrations_fixed }}" == "true" ]; then
+            echo "✅ **Pre-Flight Check**: Duplicate migrations detected and removed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
 
           INITIAL_EXIT="${{ steps.initial_tests.outputs.test_exit_code }}"
           FIX1_EXIT="${{ steps.test_after_fix_1.outputs.test_exit_code }}"
@@ -727,24 +772,32 @@ jobs:
           FINAL_EXIT="${{ steps.final_test.outputs.test_exit_code }}"
 
           if [ "$INITIAL_EXIT" == "0" ]; then
-            echo "✅ Tests passed on first run - no fixes needed" >> $GITHUB_STEP_SUMMARY
+            echo "✅ **All tests passed** - No manual fixes needed" >> $GITHUB_STEP_SUMMARY
           elif [ -n "$INITIAL_EXIT" ]; then
-            echo "Tests failed - applied fixes..." >> $GITHUB_STEP_SUMMARY
+            echo "Tests failed - Applied automatic fixes..." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
 
             if [ "$FIX1_EXIT" == "0" ]; then
-              echo "✅ Tests passed after iteration 1" >> $GITHUB_STEP_SUMMARY
+              echo "✅ **Iteration 1**: Tests passed after first fix attempt" >> $GITHUB_STEP_SUMMARY
             elif [ "$FIX2_EXIT" == "0" ]; then
-              echo "✅ Tests passed after iteration 2" >> $GITHUB_STEP_SUMMARY
+              echo "✅ **Iteration 2**: Tests passed after second fix attempt" >> $GITHUB_STEP_SUMMARY
             elif [ "$FINAL_EXIT" == "0" ]; then
-              echo "✅ Tests passed after iteration 3" >> $GITHUB_STEP_SUMMARY
+              echo "✅ **Iteration 3**: Tests passed after final fix attempt" >> $GITHUB_STEP_SUMMARY
             elif [ -n "$FINAL_EXIT" ]; then
-              echo "❌ Tests still failing after 3 iterations - manual review required" >> $GITHUB_STEP_SUMMARY
+              echo "⚠️ **Manual Review Needed**: Tests still failing after 3 iterations" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "Please review the test logs above and apply manual fixes." >> $GITHUB_STEP_SUMMARY
             else
-              echo "⚠️ Auto-fix iterations incomplete - check logs" >> $GITHUB_STEP_SUMMARY
+              echo "⚠️ **Incomplete**: Auto-fix iterations did not complete" >> $GITHUB_STEP_SUMMARY
             fi
           else
-            echo "⚠️ Initial tests did not run - check workflow conditions" >> $GITHUB_STEP_SUMMARY
+            echo "⚠️ **Warning**: Initial tests did not run" >> $GITHUB_STEP_SUMMARY
           fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📝 **Workflow**: [auto-fix-dependabot](https://github.com/${{ github.repository }}/actions/workflows/dependabot-auto-fix.yml)" >> $GITHUB_STEP_SUMMARY
 
 
 

@@ -1,0 +1,10 @@
+/*
+  This is the Tailwind CSS entry file for the application.
+*/
+
+/* Add your Tailwind imports and custom CSS here */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Additional styles (if any) can go here */

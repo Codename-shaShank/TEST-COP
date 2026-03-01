@@ -1,23 +1,38 @@
-Error: unexpected response from the server: 403 Forbidden
-{"error":{"code":"no_access","message":"No access to model: openai/gpt-4o","details":"No access to model: openai/gpt-4o"}}
+### FIX: test/integration/links_test.rb
+```ruby
+require "test_helper"
 
+class LinksTest < ActionDispatch::IntegrationTest
+  test "cannot create link without url" do
+    post links_path, params: { link: { url: "" } }
+    assert_response :unprocessable_entity
+  end
+end
+```
 
-Usage:
-  gh models run [model] [prompt] [flags]
+### FIX: app/controllers/links_controller.rb
+```ruby
+class LinksController < ApplicationController
+  def create
+    @link = Link.new(link_params)
+    if @link.save
+      redirect_to @link, notice: 'Link was successfully created.'
+    else
+      render :new, status: :unprocessable_entity
+    end
+  end
 
-Examples:
-gh models run openai/gpt-4o-mini "how many types of hyena are there?"
-gh models run --org my-org openai/gpt-4o-mini "how many types of hyena are there?"
-gh models run --file prompt.yml --var name=Alice --var topic="machine learning"
+  private
 
+  def link_params
+    params.require(:link).permit(:url)
+  end
+end
+```
 
-Flags:
-      --file string            Path to a .prompt.yml file.
-  -h, --help                   help for run
-      --max-tokens string      Limit the maximum tokens for the model response.
-      --org string             Organization to attribute usage to (omitting will attribute usage to the current actor
-      --system-prompt string   Prompt the system.
-      --temperature string     Controls randomness in the response, use lower to be more deterministic.
-      --top-p string           Controls text diversity by selecting the most probable words until a set probability is reached.
-      --var stringArray        Template variables for prompt files (can be used multiple times: --var name=value)
-
+### FIX: config/routes.rb
+```ruby
+Rails.application.routes.draw do
+  resources :links, only: [:new, :create, :show]
+end
+```

@@ -1,347 +1,357 @@
-You are an expert Ruby on Rails DevOps engineer. A Dependabot gem upgrade caused CI test failures.
+You are an expert Ruby on Rails developer. Tests failed after dependency upgrades. Analyze and fix.
 
-GEM CHANGES (Gemfile.lock diff vs main):
-diff --git a/Gemfile.lock b/Gemfile.lock
-index dfc1212..e1fd117 100644
---- a/Gemfile.lock
-+++ b/Gemfile.lock
-@@ -202,7 +202,7 @@ GEM
-       actionpack (>= 5.2)
-       activesupport (>= 5.2)
-       sprockets (>= 3.0.0)
--    sqlite3 (1.7.2-x86_64-linux)
-+    sqlite3 (2.9.0-x86_64-linux-gnu)
-     stimulus-rails (1.3.3)
-       railties (>= 6.0.0)
-     stringio (3.1.0)
-@@ -248,7 +248,7 @@ DEPENDENCIES
-   redis (~> 4.0)
-   selenium-webdriver
-   sprockets-rails
--  sqlite3 (~> 1.4)
-+  sqlite3 (~> 2.9)
-   stimulus-rails
-   tailwindcss-rails
-   turbo-rails
+## Dependency Upgrades:
+## Dependency Upgrades Detected:
+- base64: 0.2.0 → 0.3.0
+- io-console: 0.7.2 → 0.8.2
+- jbuilder: 2.11.5 → 2.14.1
+- psych: 5.1.2 → 5.3.1
+- rdoc: 6.6.2 → 7.2.0
+- reline: 0.4.3 → 0.6.3
+- sqlite3: 1.7.3-x86_64-linux → 2.9.0-x86_64-linux-gnu
+- stringio: 3.1.0 → 3.2.0
+- tailwindcss-rails: 2.3.0-x86_64-linux → 4.4.0
 
-TEST FAILURES:
-rails aborted!
-LoadError: Error loading the 'sqlite3' Active Record adapter. Missing a gem it depends on? can't activate sqlite3 (~> 1.4), already activated sqlite3-2.9.0-x86_64-linux-gnu. Make sure all dependencies are added to Gemfile. (LoadError)
-/home/runner/work/TEST-COP/TEST-COP/app/models/application_record.rb:1:in `<main>'
-/home/runner/work/TEST-COP/TEST-COP/app/models/user.rb:1:in `<main>'
-/home/runner/work/TEST-COP/TEST-COP/config/routes.rb:2:in `block in <main>'
-/home/runner/work/TEST-COP/TEST-COP/config/routes.rb:1:in `<main>'
-/home/runner/work/TEST-COP/TEST-COP/config/environment.rb:5:in `<main>'
+## Upgrade Guides & Breaking Changes:
+The following gems were upgraded. Review their changelogs for breaking changes:
 
-Caused by:
-Gem::LoadError: can't activate sqlite3 (~> 1.4), already activated sqlite3-2.9.0-x86_64-linux-gnu. Make sure all dependencies are added to Gemfile. (Gem::LoadError)
-/home/runner/work/TEST-COP/TEST-COP/app/models/application_record.rb:1:in `<main>'
-/home/runner/work/TEST-COP/TEST-COP/app/models/user.rb:1:in `<main>'
-/home/runner/work/TEST-COP/TEST-COP/config/routes.rb:2:in `block in <main>'
-/home/runner/work/TEST-COP/TEST-COP/config/routes.rb:1:in `<main>'
-/home/runner/work/TEST-COP/TEST-COP/config/environment.rb:5:in `<main>'
-Tasks: TOP => test:prepare => tailwindcss:build => environment
-(See full trace by running task with --trace)
-/opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/bundler-2.4.14/lib/bundler/rubygems_integration.rb:280:in `block (2 levels) in replace_gem': Error loading the 'sqlite3' Active Record adapter. Missing a gem it depends on? can't activate sqlite3 (~> 1.4), already activated sqlite3-2.9.0-x86_64-linux-gnu. Make sure all dependencies are added to Gemfile. (LoadError)
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/activerecord-7.0.8.1/lib/active_record/connection_adapters/sqlite3_adapter.rb:13:in `<main>'
-	from <internal:/opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/rubygems/core_ext/kernel_require.rb>:38:in `require'
-	from <internal:/opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/rubygems/core_ext/kernel_require.rb>:38:in `require'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/bootsnap-1.18.3/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb:30:in `require'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/zeitwerk-2.6.13/lib/zeitwerk/kernel.rb:34:in `require'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/activerecord-7.0.8.1/lib/active_record/connection_adapters/abstract/connection_handler.rb:268:in `resolve_pool_config'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/activerecord-7.0.8.1/lib/active_record/connection_adapters/abstract/connection_handler.rb:129:in `establish_connection'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/activerecord-7.0.8.1/lib/active_record/connection_handling.rb:52:in `establish_connection'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/activerecord-7.0.8.1/lib/active_record/railtie.rb:268:in `block (2 levels) in <class:Railtie>'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/activesupport-7.0.8.1/lib/active_support/lazy_load_hooks.rb:95:in `class_eval'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/activesupport-7.0.8.1/lib/active_support/lazy_load_hooks.rb:95:in `block in execute_hook'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/activesupport-7.0.8.1/lib/active_support/lazy_load_hooks.rb:85:in `with_execution_control'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/activesupport-7.0.8.1/lib/active_support/lazy_load_hooks.rb:90:in `execute_hook'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/activesupport-7.0.8.1/lib/active_support/lazy_load_hooks.rb:76:in `block in run_load_hooks'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/activesupport-7.0.8.1/lib/active_support/lazy_load_hooks.rb:75:in `each'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/activesupport-7.0.8.1/lib/active_support/lazy_load_hooks.rb:75:in `run_load_hooks'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/activerecord-7.0.8.1/lib/active_record/base.rb:333:in `<module:ActiveRecord>'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/activerecord-7.0.8.1/lib/active_record/base.rb:15:in `<main>'
-	from <internal:/opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/rubygems/core_ext/kernel_require.rb>:38:in `require'
-	from <internal:/opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/rubygems/core_ext/kernel_require.rb>:38:in `require'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/bootsnap-1.18.3/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb:30:in `require'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/zeitwerk-2.6.13/lib/zeitwerk/kernel.rb:34:in `require'
-	from /home/runner/work/TEST-COP/TEST-COP/app/models/application_record.rb:1:in `<main>'
-	from <internal:/opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/rubygems/core_ext/kernel_require.rb>:38:in `require'
-	from <internal:/opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/rubygems/core_ext/kernel_require.rb>:38:in `require'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/bootsnap-1.18.3/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb:30:in `require'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/zeitwerk-2.6.13/lib/zeitwerk/kernel.rb:26:in `require'
-	from /home/runner/work/TEST-COP/TEST-COP/app/models/user.rb:1:in `<main>'
-	from <internal:/opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/rubygems/core_ext/kernel_require.rb>:38:in `require'
-	from <internal:/opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/rubygems/core_ext/kernel_require.rb>:38:in `require'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/bootsnap-1.18.3/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb:30:in `require'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/zeitwerk-2.6.13/lib/zeitwerk/kernel.rb:26:in `require'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/activesupport-7.0.8.1/lib/active_support/inflector/methods.rb:278:in `const_get'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/activesupport-7.0.8.1/lib/active_support/inflector/methods.rb:278:in `constantize'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/activesupport-7.0.8.1/lib/active_support/core_ext/string/inflections.rb:74:in `constantize'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/devise-4.9.3/lib/devise.rb:327:in `get'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/devise-4.9.3/lib/devise/mapping.rb:83:in `to'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/devise-4.9.3/lib/devise/mapping.rb:78:in `modules'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/devise-4.9.3/lib/devise/mapping.rb:95:in `routes'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/devise-4.9.3/lib/devise/mapping.rb:162:in `default_used_route'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/devise-4.9.3/lib/devise/mapping.rb:72:in `initialize'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/devise-4.9.3/lib/devise.rb:361:in `new'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/devise-4.9.3/lib/devise.rb:361:in `add_mapping'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/devise-4.9.3/lib/devise/rails/routes.rb:243:in `block in devise_for'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/devise-4.9.3/lib/devise/rails/routes.rb:242:in `each'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/devise-4.9.3/lib/devise/rails/routes.rb:242:in `devise_for'
-	from /home/runner/work/TEST-COP/TEST-COP/config/routes.rb:2:in `block in <main>'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/actionpack-7.0.8.1/lib/action_dispatch/routing/route_set.rb:428:in `instance_exec'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/actionpack-7.0.8.1/lib/action_dispatch/routing/route_set.rb:428:in `eval_block'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/actionpack-7.0.8.1/lib/action_dispatch/routing/route_set.rb:410:in `draw'
-	from /home/runner/work/TEST-COP/TEST-COP/config/routes.rb:1:in `<main>'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/railties-7.0.8.1/lib/rails/application/routes_reloader.rb:50:in `load'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/railties-7.0.8.1/lib/rails/application/routes_reloader.rb:50:in `block in load_paths'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/railties-7.0.8.1/lib/rails/application/routes_reloader.rb:50:in `each'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/railties-7.0.8.1/lib/rails/application/routes_reloader.rb:50:in `load_paths'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/railties-7.0.8.1/lib/rails/application/routes_reloader.rb:24:in `reload!'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/railties-7.0.8.1/lib/rails/application.rb:149:in `reload_routes!'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/devise-4.9.3/lib/devise/rails.rb:17:in `block in <class:Engine>'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/activesupport-7.0.8.1/lib/active_support/lazy_load_hooks.rb:92:in `block in execute_hook'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/activesupport-7.0.8.1/lib/active_support/lazy_load_hooks.rb:85:in `with_execution_control'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/activesupport-7.0.8.1/lib/active_support/lazy_load_hooks.rb:90:in `execute_hook'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/activesupport-7.0.8.1/lib/active_support/lazy_load_hooks.rb:76:in `block in run_load_hooks'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/activesupport-7.0.8.1/lib/active_support/lazy_load_hooks.rb:75:in `each'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/activesupport-7.0.8.1/lib/active_support/lazy_load_hooks.rb:75:in `run_load_hooks'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/railties-7.0.8.1/lib/rails/application/finisher.rb:73:in `block in <module:Finisher>'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/railties-7.0.8.1/lib/rails/initializable.rb:32:in `instance_exec'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/railties-7.0.8.1/lib/rails/initializable.rb:32:in `run'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/railties-7.0.8.1/lib/rails/initializable.rb:61:in `block in run_initializers'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/tsort.rb:228:in `block in tsort_each'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/tsort.rb:350:in `block (2 levels) in each_strongly_connected_component'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/tsort.rb:431:in `each_strongly_connected_component_from'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/tsort.rb:349:in `block in each_strongly_connected_component'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/tsort.rb:347:in `each'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/tsort.rb:347:in `call'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/tsort.rb:347:in `each_strongly_connected_component'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/tsort.rb:226:in `tsort_each'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/tsort.rb:205:in `tsort_each'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/railties-7.0.8.1/lib/rails/initializable.rb:60:in `run_initializers'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/railties-7.0.8.1/lib/rails/application.rb:372:in `initialize!'
-	from /home/runner/work/TEST-COP/TEST-COP/config/environment.rb:5:in `<main>'
-	from /home/runner/work/TEST-COP/TEST-COP/test/test_helper.rb:2:in `require_relative'
-	from /home/runner/work/TEST-COP/TEST-COP/test/test_helper.rb:2:in `<main>'
-	from <internal:/opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/rubygems/core_ext/kernel_require.rb>:38:in `require'
-	from <internal:/opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/rubygems/core_ext/kernel_require.rb>:38:in `require'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/bootsnap-1.18.3/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb:30:in `require'
-	from /home/runner/work/TEST-COP/TEST-COP/test/channels/application_cable/connection_test.rb:1:in `<main>'
-	from <internal:/opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/rubygems/core_ext/kernel_require.rb>:38:in `require'
-	from <internal:/opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/rubygems/core_ext/kernel_require.rb>:38:in `require'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/bootsnap-1.18.3/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb:30:in `require'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/railties-7.0.8.1/lib/rails/test_unit/runner.rb:47:in `block in load_tests'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/railties-7.0.8.1/lib/rails/test_unit/runner.rb:47:in `each'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/railties-7.0.8.1/lib/rails/test_unit/runner.rb:47:in `load_tests'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/railties-7.0.8.1/lib/rails/test_unit/runner.rb:40:in `run'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/railties-7.0.8.1/lib/rails/commands/test/test_command.rb:33:in `perform'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/thor-1.3.1/lib/thor/command.rb:28:in `run'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/thor-1.3.1/lib/thor/invocation.rb:127:in `invoke_command'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/thor-1.3.1/lib/thor.rb:527:in `dispatch'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/railties-7.0.8.1/lib/rails/command/base.rb:87:in `perform'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/railties-7.0.8.1/lib/rails/command.rb:48:in `invoke'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/railties-7.0.8.1/lib/rails/commands.rb:18:in `<main>'
-	from <internal:/opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/rubygems/core_ext/kernel_require.rb>:38:in `require'
-	from <internal:/opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/rubygems/core_ext/kernel_require.rb>:38:in `require'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/bootsnap-1.18.3/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb:30:in `require'
-	from bin/rails:4:in `<main>'
-/opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/bundler-2.4.14/lib/bundler/rubygems_integration.rb:280:in `block (2 levels) in replace_gem': can't activate sqlite3 (~> 1.4), already activated sqlite3-2.9.0-x86_64-linux-gnu. Make sure all dependencies are added to Gemfile. (Gem::LoadError)
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/activerecord-7.0.8.1/lib/active_record/connection_adapters/sqlite3_adapter.rb:13:in `<main>'
-	from <internal:/opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/rubygems/core_ext/kernel_require.rb>:38:in `require'
-	from <internal:/opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/rubygems/core_ext/kernel_require.rb>:38:in `require'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/bootsnap-1.18.3/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb:30:in `require'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/zeitwerk-2.6.13/lib/zeitwerk/kernel.rb:34:in `require'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/activerecord-7.0.8.1/lib/active_record/connection_adapters/abstract/connection_handler.rb:268:in `resolve_pool_config'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/activerecord-7.0.8.1/lib/active_record/connection_adapters/abstract/connection_handler.rb:129:in `establish_connection'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/activerecord-7.0.8.1/lib/active_record/connection_handling.rb:52:in `establish_connection'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/activerecord-7.0.8.1/lib/active_record/railtie.rb:268:in `block (2 levels) in <class:Railtie>'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/activesupport-7.0.8.1/lib/active_support/lazy_load_hooks.rb:95:in `class_eval'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/activesupport-7.0.8.1/lib/active_support/lazy_load_hooks.rb:95:in `block in execute_hook'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/activesupport-7.0.8.1/lib/active_support/lazy_load_hooks.rb:85:in `with_execution_control'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/activesupport-7.0.8.1/lib/active_support/lazy_load_hooks.rb:90:in `execute_hook'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/activesupport-7.0.8.1/lib/active_support/lazy_load_hooks.rb:76:in `block in run_load_hooks'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/activesupport-7.0.8.1/lib/active_support/lazy_load_hooks.rb:75:in `each'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/activesupport-7.0.8.1/lib/active_support/lazy_load_hooks.rb:75:in `run_load_hooks'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/activerecord-7.0.8.1/lib/active_record/base.rb:333:in `<module:ActiveRecord>'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/activerecord-7.0.8.1/lib/active_record/base.rb:15:in `<main>'
-	from <internal:/opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/rubygems/core_ext/kernel_require.rb>:38:in `require'
-	from <internal:/opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/rubygems/core_ext/kernel_require.rb>:38:in `require'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/bootsnap-1.18.3/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb:30:in `require'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/zeitwerk-2.6.13/lib/zeitwerk/kernel.rb:34:in `require'
-	from /home/runner/work/TEST-COP/TEST-COP/app/models/application_record.rb:1:in `<main>'
-	from <internal:/opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/rubygems/core_ext/kernel_require.rb>:38:in `require'
-	from <internal:/opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/rubygems/core_ext/kernel_require.rb>:38:in `require'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/bootsnap-1.18.3/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb:30:in `require'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/zeitwerk-2.6.13/lib/zeitwerk/kernel.rb:26:in `require'
-	from /home/runner/work/TEST-COP/TEST-COP/app/models/user.rb:1:in `<main>'
-	from <internal:/opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/rubygems/core_ext/kernel_require.rb>:38:in `require'
-	from <internal:/opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/rubygems/core_ext/kernel_require.rb>:38:in `require'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/bootsnap-1.18.3/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb:30:in `require'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/zeitwerk-2.6.13/lib/zeitwerk/kernel.rb:26:in `require'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/activesupport-7.0.8.1/lib/active_support/inflector/methods.rb:278:in `const_get'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/activesupport-7.0.8.1/lib/active_support/inflector/methods.rb:278:in `constantize'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/activesupport-7.0.8.1/lib/active_support/core_ext/string/inflections.rb:74:in `constantize'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/devise-4.9.3/lib/devise.rb:327:in `get'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/devise-4.9.3/lib/devise/mapping.rb:83:in `to'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/devise-4.9.3/lib/devise/mapping.rb:78:in `modules'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/devise-4.9.3/lib/devise/mapping.rb:95:in `routes'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/devise-4.9.3/lib/devise/mapping.rb:162:in `default_used_route'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/devise-4.9.3/lib/devise/mapping.rb:72:in `initialize'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/devise-4.9.3/lib/devise.rb:361:in `new'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/devise-4.9.3/lib/devise.rb:361:in `add_mapping'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/devise-4.9.3/lib/devise/rails/routes.rb:243:in `block in devise_for'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/devise-4.9.3/lib/devise/rails/routes.rb:242:in `each'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/devise-4.9.3/lib/devise/rails/routes.rb:242:in `devise_for'
-	from /home/runner/work/TEST-COP/TEST-COP/config/routes.rb:2:in `block in <main>'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/actionpack-7.0.8.1/lib/action_dispatch/routing/route_set.rb:428:in `instance_exec'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/actionpack-7.0.8.1/lib/action_dispatch/routing/route_set.rb:428:in `eval_block'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/actionpack-7.0.8.1/lib/action_dispatch/routing/route_set.rb:410:in `draw'
-	from /home/runner/work/TEST-COP/TEST-COP/config/routes.rb:1:in `<main>'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/railties-7.0.8.1/lib/rails/application/routes_reloader.rb:50:in `load'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/railties-7.0.8.1/lib/rails/application/routes_reloader.rb:50:in `block in load_paths'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/railties-7.0.8.1/lib/rails/application/routes_reloader.rb:50:in `each'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/railties-7.0.8.1/lib/rails/application/routes_reloader.rb:50:in `load_paths'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/railties-7.0.8.1/lib/rails/application/routes_reloader.rb:24:in `reload!'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/railties-7.0.8.1/lib/rails/application.rb:149:in `reload_routes!'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/devise-4.9.3/lib/devise/rails.rb:17:in `block in <class:Engine>'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/activesupport-7.0.8.1/lib/active_support/lazy_load_hooks.rb:92:in `block in execute_hook'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/activesupport-7.0.8.1/lib/active_support/lazy_load_hooks.rb:85:in `with_execution_control'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/activesupport-7.0.8.1/lib/active_support/lazy_load_hooks.rb:90:in `execute_hook'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/activesupport-7.0.8.1/lib/active_support/lazy_load_hooks.rb:76:in `block in run_load_hooks'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/activesupport-7.0.8.1/lib/active_support/lazy_load_hooks.rb:75:in `each'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/activesupport-7.0.8.1/lib/active_support/lazy_load_hooks.rb:75:in `run_load_hooks'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/railties-7.0.8.1/lib/rails/application/finisher.rb:73:in `block in <module:Finisher>'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/railties-7.0.8.1/lib/rails/initializable.rb:32:in `instance_exec'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/railties-7.0.8.1/lib/rails/initializable.rb:32:in `run'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/railties-7.0.8.1/lib/rails/initializable.rb:61:in `block in run_initializers'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/tsort.rb:228:in `block in tsort_each'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/tsort.rb:350:in `block (2 levels) in each_strongly_connected_component'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/tsort.rb:431:in `each_strongly_connected_component_from'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/tsort.rb:349:in `block in each_strongly_connected_component'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/tsort.rb:347:in `each'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/tsort.rb:347:in `call'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/tsort.rb:347:in `each_strongly_connected_component'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/tsort.rb:226:in `tsort_each'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/tsort.rb:205:in `tsort_each'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/railties-7.0.8.1/lib/rails/initializable.rb:60:in `run_initializers'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/railties-7.0.8.1/lib/rails/application.rb:372:in `initialize!'
-	from /home/runner/work/TEST-COP/TEST-COP/config/environment.rb:5:in `<main>'
-	from /home/runner/work/TEST-COP/TEST-COP/test/test_helper.rb:2:in `require_relative'
-	from /home/runner/work/TEST-COP/TEST-COP/test/test_helper.rb:2:in `<main>'
-	from <internal:/opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/rubygems/core_ext/kernel_require.rb>:38:in `require'
-	from <internal:/opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/rubygems/core_ext/kernel_require.rb>:38:in `require'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/bootsnap-1.18.3/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb:30:in `require'
-	from /home/runner/work/TEST-COP/TEST-COP/test/channels/application_cable/connection_test.rb:1:in `<main>'
-	from <internal:/opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/rubygems/core_ext/kernel_require.rb>:38:in `require'
-	from <internal:/opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/rubygems/core_ext/kernel_require.rb>:38:in `require'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/bootsnap-1.18.3/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb:30:in `require'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/railties-7.0.8.1/lib/rails/test_unit/runner.rb:47:in `block in load_tests'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/railties-7.0.8.1/lib/rails/test_unit/runner.rb:47:in `each'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/railties-7.0.8.1/lib/rails/test_unit/runner.rb:47:in `load_tests'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/railties-7.0.8.1/lib/rails/test_unit/runner.rb:40:in `run'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/railties-7.0.8.1/lib/rails/commands/test/test_command.rb:33:in `perform'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/thor-1.3.1/lib/thor/command.rb:28:in `run'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/thor-1.3.1/lib/thor/invocation.rb:127:in `invoke_command'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/thor-1.3.1/lib/thor.rb:527:in `dispatch'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/railties-7.0.8.1/lib/rails/command/base.rb:87:in `perform'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/railties-7.0.8.1/lib/rails/command.rb:48:in `invoke'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/railties-7.0.8.1/lib/rails/commands.rb:18:in `<main>'
-	from <internal:/opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/rubygems/core_ext/kernel_require.rb>:38:in `require'
-	from <internal:/opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/3.2.0/rubygems/core_ext/kernel_require.rb>:38:in `require'
-	from /opt/hostedtoolcache/Ruby/3.2.10/x64/lib/ruby/gems/3.2.0/gems/bootsnap-1.18.3/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb:30:in `require'
-	from bin/rails:4:in `<main>'
+## base64 (0.2.0 → 0.3.0)
 
-PROJECT FILES (for context):
-app/helpers/application_helper.rb
-app/helpers/favicon_helper.rb
-app/models/metadata.rb
-app/models/user.rb
-app/models/application_record.rb
-app/models/view.rb
-app/models/concerns/.keep
-app/models/link.rb
-app/models/base62.rb
-app/javascript/application.js
-app/javascript/controllers/application.js
-app/javascript/controllers/reset_form_controller.js
-app/javascript/controllers/clipboard_controller.js
-app/javascript/controllers/index.js
-app/javascript/controllers/hello_controller.js
-app/controllers/links_controller.rb
-app/controllers/application_controller.rb
-app/controllers/concerns/.keep
-app/controllers/turbo_devise_controller.rb
-app/controllers/views_controller.rb
-app/assets/builds/.keep
-app/assets/images/.keep
-app/assets/stylesheets/application.tailwind.css
-app/assets/stylesheets/application.css
-app/assets/config/manifest.js
-app/jobs/metadata_job.rb
-app/jobs/application_job.rb
-app/channels/application_cable/connection.rb
-app/channels/application_cable/channel.rb
-app/views/devise/mailer/email_changed.html.erb
-app/views/devise/mailer/confirmation_instructions.html.erb
-app/views/devise/mailer/password_change.html.erb
-app/views/devise/mailer/unlock_instructions.html.erb
-app/views/devise/mailer/reset_password_instructions.html.erb
-app/views/devise/confirmations/new.html.erb
-app/views/devise/passwords/edit.html.erb
-app/views/devise/passwords/new.html.erb
-app/views/devise/unlocks/new.html.erb
-app/views/devise/sessions/new.html.erb
-app/views/devise/registrations/edit.html.erb
-app/views/devise/registrations/new.html.erb
-app/views/devise/shared/_links.html.erb
-app/views/devise/shared/_error_messages.html.erb
-app/views/links/_form.html.erb
-app/views/links/_link.html.erb
-app/views/links/edit.html.erb
-app/views/links/index.html.erb
-app/views/links/show.html.erb
-app/views/layouts/application.html.erb
-app/views/layouts/mailer.text.erb
-app/views/layouts/mailer.html.erb
-app/mailers/application_mailer.rb
-config/routes.rb
-config/database.yml
-config/puma.rb
-config/environment.rb
-config/locales/devise.en.yml
-config/locales/en.yml
-config/application.rb
-config/tailwind.config.js
-config/credentials.yml.enc
-config/boot.rb
-config/storage.yml
-config/environments/development.rb
-config/environments/test.rb
-config/environments/production.rb
-config/importmap.rb
-config/initializers/inflections.rb
-config/initializers/assets.rb
-config/initializers/filter_parameter_logging.rb
-config/initializers/devise.rb
-config/initializers/content_security_policy.rb
-config/initializers/permissions_policy.rb
-config/cable.yml
-lib/tasks/.keep
-lib/assets/.keep
+Changelog: https://github.com/ruby/base64/releases
 
-YOUR TASK:
-Analyze the test failures caused by the gem upgrade and provide code-level fixes.
-You may fix ANY files needed: app/, config/, lib/, Gemfile, test/, etc.
+---
 
-Format your response EXACTLY as shown below (one block per file):
+## io-console (0.7.2 → 0.8.2)
 
-FIX_FILE: path/to/file.ext
-```language
-complete file content here (not partial — write the full file)
-```
+Changelog: https://github.com/ruby/io-console/releases
 
-COMMIT_MESSAGE: short description of the fix
+---
 
-If no fixes are needed, respond with only: NO_FIX_NEEDED
+## jbuilder (2.11.5 → 2.14.1)
+
+### v2.14.1
+## What's Changed
+* Ensure that `Jbuilder.encode` properly forwards arguments to `.new` by @flavorjones in https://github.com/rails/jbuilder/pull/601
+
+## New Contributors
+* @flavorjones made their first contribution in https://github.com/rails/jbuilder/pull/601
+
+**Full Changelog**: https://github.com/rails/jbuilder/compare/v2.14.0...v2.14.1
+
+### v2.14.0
+## What's Changed
+* Drop support to Ruby < 3.0 and Rails < 7.0
+* Test against Rails 8 and fix Rails 7 logger dependency by @excid3 in https://github.com/rails/jbuilder/pull/582
+* Add status: :see_other to update action by @excid3 in https://github.com/rails/jbuilder/pull/583
+* Force close final statement in templates by @ienders in https://github.com/rails/jbuilder/pull/578
+* Optimize `_is_collection?` method by @moberegger in https://github.com/rails/jbuilder/pull/590
+* Add `#frozen_string_literal: true` to all files by @moberegger in https://github.com/rails/jbuilder/pull/599
+* Optimize `_key` to prevent string allocation when formatting `Symbol`s by @moberegger in https://github.com/rails/jbuilder/pull/593
+* Optimize key formatter by @moberegger in https://github.com/rails/jbuilder/pull/597
+* Optimize internal `extract!` calls to save on memory allocation by @moberegger in https://github.com/rails/jbuilder/pull/598
+* Fix regression in API controllers with view_cache_dependencies helper by @excid3 in https://github.com/rails/jbuilder/pull/575
+* Optimize `method_missing` via `alias_method` by @moberegger in https://github.com/rails/jbuilder/pull/600
+* Cleanup project for Rails 7+ support by @moberegger in https://github.com/rails/jbuilder/pull/594
+* Fix warnings and prevent Jbuilder::VERSION constant from being obliterated by @pixeltrix in https://github.com/rails/jbuilder/pull/574
+* Optimize memory allocation when rendering partials by @moberegger in https://github.com/rails/jbuilder/pull/591
+
+## New Contributors
+* @richardvenneman made their first contribution in https://github.com/rails/jbuilder/pull/576
+* @ienders made their first contribution in https://github.com/rails/jbuilder/pull/578
+* @moberegger made their first contribution in https://github.com/rails/jbuilder/pull/590
+
+**Full Changelog**: https://github.com/rails/jbuilder/compare/v2.13.0...v2.14.0
+
+### v2.13.0
+## What's Changed
+
+* Redirect to `@record` or path in controller generator by @jeromedalbert in https://github.com/rails/jbuilder/pull/569
+* Return early from collection partial rendering if blank by @tylerjc in https://github.com/rails/jbuilder/pull/560
+* Add missing ':see_other' status code in generated destroy controller method by @ldeld in https://github.com/rails/jbuilder/pull/538
+* Remove OpenStruct references from Jbuilder by @mtsmfm in https://github.com/rails/jbuilder/pull/567
+* Use new `params.expect` syntax instead of `params.require` by @jeromedalbert in https://github.com/rails/jbuilder/pull/573
+
+## New Contributors
+* @jeromedalbert made their first contribution in https://github.com/rails/jbuilder/pull/570
+* @tylerjc made their first contribution in https://github.com/rails/jbuilder/pull/560
+* @ldeld made their first contribution in https://github.com/rails/jbuilder/pull/538
+* @mtsmfm made their first contribution in https://github.com/rails/jbuilder/pull/567
+
+**Full Changelog**: https://github.com/rails/jbuilder/compare/v2.12.0...v2.13.0
+
+### v2.12.0
+## What's Changed
+
+* Use OpenStruct only if available by @yahonda in https://github.com/rails/jbuilder/pull/562
+* Replace deprecated `ProxyObject` with `BasicObject` by @Earlopain in https://github.com/rails/jbuilder/pull/563
+* Avoid loading `ActionController::API` constant by @nvasilevski in https://github.com/rails/jbuilder/pull/529
+* Fixed a bug where #501 broke compatibility with Enumerable by @yuki24 in https://github.com/rails/jbuilder/pull/531
+* Fix namespace issue when generating jbuilder views by @hahmed in https://github.com/rails/jbuilder/pull/536
+* Remove reliance on ERBTracker from rails by @HParker in https://github.com/rails/jbuilder/pull/504
+* Fix require path of dependency_tracker in railtie.rb by @jalyna in https://github.com/rails/jbuilder/pull/552
+
+## New Contributors
+* @nvasilevski made their first contribution in https://github.com/rails/jbuilder/pull/529
+* @okuramasafumi made their first contribution in https://github.com/rails/jbuilder/pull/526
+* @berkos made their first contribution in https://github.com/rails/jbuilder/pull/528
+* @hahmed made their first contribution in https://github.com/rails/jbuilder/pull/536
+* @casperisfine made their first contribution in https://github.com/rails/jbuilder/pull/550
+* @jalyna made their first contribution in https://github.com/rails/jbuilder/pull/552
+* @yahonda made their first contribution in https://github.com/rails/jbuilder/pull/562
+* @Earlopain made their first contribution in https://github.com/rails/jbuilder/pull/563
+* @stefannibrasil made their first contribution in https://github.com/rails/jbuilder/pull/539
+
+**Full Changelog**: https://github.com/rails/jbuilder/compare/v2.11.5...v2.12.0
+
+### v2.11.5
+## What's Changed
+
+* Make sure action_view is loaded before using it.
+
+**Full Changelog**: https://github.com/rails/jbuilder/compare/v2.11.4...v2.11.5
+
+---
+
+## psych (5.1.2 → 5.3.1)
+
+Changelog: https://github.com/ruby/psych/releases
+
+---
+
+## rdoc (6.6.2 → 7.2.0)
+
+Changelog: https://github.com/ruby/rdoc/releases
+
+---
+
+## reline (0.4.3 → 0.6.3)
+
+Changelog: https://github.com/ruby/reline/releases
+
+---
+
+## sqlite3 (1.7.3-x86_64-linux → 2.9.0-x86_64-linux-gnu)
+
+Changelog: https://github.com/sparklemotion/sqlite3-ruby/blob/master/CHANGELOG.md
+
+---
+
+## stringio (3.1.0 → 3.2.0)
+
+Changelog: https://github.com/ruby/stringio/releases/tag/v3.2.0
+
+---
+
+## tailwindcss-rails (2.3.0-x86_64-linux → 4.4.0)
+
+### v4.4.0
+## v4.4.0 / 2025-10-27
+
+### Changed
+
+* Removed the "poll" option on the watch command, since Tailwind v4 dropped support for this option (and it has been a no-op in this gem since.) #580 @flavorjones
+
+### Improved
+
+* Support Rails 8.1 scaffolding which disables system tests by default. #585 @flavorjones
+* Puma plugin now has experimental support for Rails engines. #567 @bopm
+* Puma plugin uses Puma 7's `after_stopped` callback, quashing a deprecation warning. #578 @rono23
+
+### New Contributors 🎉
+* @yahonda made their first contribution in https://github.com/rails/tailwindcss-rails/pull/569
+* @venarius made their first contribution in https://github.com/rails/tailwindcss-rails/pull/575
+* @rono23 made their first contribution in https://github.com/rails/tailwindcss-rails/pull/578
+* @thewatts made their first contribution in https://github.com/rails/tailwindcss-rails/pull/576
+
+**Full Changelog**: https://github.com/rails/tailwindcss-rails/compare/v4.3.0...v4.4.0
+
+### v4.3.0 / 2025-07-06
+## v4.3.0 / 2025-07-06
+
+### Improved
+
+* Experimental support for Rails engines. Feedback is welcome at #355. #554, #556 @bopm
+* Gracefully handle application created with `--skip-system-test`. #559, #562 @flavorjones
+
+
+### v4.3.0.rc2
+## v4.3.0.rc2
+
+### Improved
+
+* Experimental support for Rails engines. Feedback is welcome at #355. #554, #556 @bopm
+
+
+
+
+### v4.3.0.rc1
+## v4.3.0.rc1
+
+### Improved
+
+* Experimental support for Rails engines. Feedback is welcome at #355. #554 @bopm
+
+
+### v4.2.3 / 2025-05-02
+## v4.2.3 / 2025-05-02
+
+### Improved
+
+* The "tailwindcss:upgrade" task now pins to v4.1.4 of the `@tailwindcss/upgrade` tool. #544 @flavorjones
+
+
+### v3.3.2 / 2025-04-21
+## v3.3.2 / 2025-04-21
+
+* Quash the "caniuse-lite is outdated" warning message from the `tailwindcss` CLI. #536 @wlipa
+
+
+### v4.2.2 / 2025-04-05
+## v4.2.2 / 2025-04-05
+
+### Improved
+
+* The "tailwindcss:upgrade" task now uses the latest version of the `@tailwindcss/upgrade` tool. #529 @flavorjones
+* The "verbose" flag on Rails tasks now emits additional tailwind CLI debugging info (e.g., `bin/rails tailwindcss:build[verbose]`). #530 @flavorjones
+* Simplified the scaffold templates, removing unnecessary `div` tags. @523 @patriciomacadden
+
+
+
+## Test Output (showing failures):
+[3m[1m[34m≈[39m[22m[23m tailwindcss [34mv4.2.0[39m
+
+Done in [34m56ms[39m
+[3m[1m[34m≈[39m[22m[23m tailwindcss [34mv4.2.0[39m
+
+Done in [34m50ms[39m
+DEPRECATION WARNING: resource received a hash argument only. Please use a keyword instead. Support to hash argument will be removed in Rails 8.2. (called from block in <main> at /home/runner/work/TEST-COP/TEST-COP/config/routes.rb:2)
+DEPRECATION WARNING: resource received a hash argument path. Please use a keyword instead. Support to hash argument will be removed in Rails 8.2. (called from block in <main> at /home/runner/work/TEST-COP/TEST-COP/config/routes.rb:2)
+DEPRECATION WARNING: resource received a hash argument path_names. Please use a keyword instead. Support to hash argument will be removed in Rails 8.2. (called from block in <main> at /home/runner/work/TEST-COP/TEST-COP/config/routes.rb:2)
+DEPRECATION WARNING: resource received a hash argument controller. Please use a keyword instead. Support to hash argument will be removed in Rails 8.2. (called from block in <main> at /home/runner/work/TEST-COP/TEST-COP/config/routes.rb:2)
+Running 12 tests in a single process (parallelization threshold is 50)
+Run options: --seed 28797
+
+# Running:
+
+...F
+
+Failure:
+LinksTest#test_cannot_create_link_without_url [test/integration/links_test.rb:6]:
+Expected response to be a <422: unprocessable_entity>, but was a <500: Internal Server Error>
+
+bin/rails test test/integration/links_test.rb:4
+
+........
+
+Finished in 0.921133s, 13.0274 runs/s, 19.5411 assertions/s.
+12 runs, 18 assertions, 1 failures, 0 errors, 0 skips
+
+## Gemfile:
+source "https://rubygems.org"
+git_source(:github) { |repo| "https://github.com/#{repo}.git" }
+
+ruby "3.2.10"
+
+# Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
+gem "rails", "~> 8.1"
+
+# The original asset pipeline for Rails [https://github.com/rails/sprockets-rails]
+gem "sprockets-rails"
+
+# Use sqlite3 as the database for Active Record
+# Rails 8 requires sqlite3 >= 2.1
+gem "sqlite3", ">= 2.1"
+
+# Use the Puma web server [https://github.com/puma/puma]
+# Updated to 6.0+ for Rails 8+ compatibility with Rack 3
+gem "puma", ">= 6.0"
+
+# Use JavaScript with ESM import maps [https://github.com/rails/importmap-rails]
+gem "importmap-rails"
+
+# Hotwire's SPA-like page accelerator [https://turbo.hotwired.dev]
+gem "turbo-rails"
+
+# Hotwire's modest JavaScript framework [https://stimulus.hotwired.dev]
+gem "stimulus-rails"
+
+# Use Tailwind CSS [https://github.com/rails/tailwindcss-rails]
+gem "tailwindcss-rails"
+
+# Build JSON APIs with ease [https://github.com/rails/jbuilder]
+# Require 2.13+ for Rails 8 compatibility (active_support/proxy_object removed)
+gem "jbuilder", ">= 2.13"
+
+# Use Redis adapter to run Action Cable in production
+gem "redis", "~> 4.0"
+
+# Use Kredis to get higher-level data types in Redis [https://github.com/rails/kredis]
+# gem "kredis"
+
+# Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
+# gem "bcrypt", "~> 3.1.7"
+
+# Windows does not include zoneinfo files, so bundle the tzinfo-data gem
+gem "tzinfo-data", platforms: %i[ mingw mswin x64_mingw jruby ]
+
+# Reduces boot times through caching; required in config/boot.rb
+gem "bootsnap", require: false
+
+# Use Sass to process CSS
+# gem "sassc-rails"
+
+# Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
+# gem "image_processing", "~> 1.2"
+
+group :development, :test do
+  # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
+  gem "debug", platforms: %i[ mri mingw x64_mingw ]
+end
+
+group :development do
+  # Use console on exceptions pages [https://github.com/rails/web-console]
+  gem "web-console"
+
+  # Add speed badges [https://github.com/MiniProfiler/rack-mini-profiler]
+  # gem "rack-mini-profiler"
+
+  # Speed up commands on slow machines / big apps [https://github.com/rails/spring]
+  # gem "spring"
+end
+
+group :test do
+  # Use system testing [https://guides.rubyonrails.org/testing.html#system-testing]
+  gem "capybara"
+  gem "selenium-webdriver"
+
+end
+
+gem "chartkick", "~> 5.0"
+gem "groupdate", "~> 6.4"
+
+gem "devise", "~> 4.9"
+
+## Source Files (relevant to failures):
+
+ ## Your Task (STRICT FORMAT):
+
+ You MUST respond only in this machine-readable format.
+
+ For EACH file you want to change, output:
+
+ ### FIX: relative/path/to/file.ext
+ ```LANG
+ # FULL NEW CONTENT OF THE FILE GOES HERE
+ # This must be the entire file, not a diff.
+ ```
+
+ Rules:
+ - `relative/path/to/file.ext` is from the repo root (e.g. `app/assets/tailwind/application.css`).
+ - `LANG` is a language tag like ruby, yml, yaml, js, css, scss, etc.
+ - Include the COMPLETE file contents in the code block (no `...`).
+ - You may output multiple `### FIX:` blocks, one per file.
+ - If no code change is needed, output exactly:
+
+ NO_FIX_NEEDED
+
+ and nothing else.
